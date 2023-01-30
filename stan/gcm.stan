@@ -82,7 +82,7 @@ model {
     // Prior
     target += beta_lpdf(w | 1, 1);
     // Missing a prior for c
-    target += beta_lpdf(c | 1, 1); //Figure out how to bound at 0-5
+    target += beta_lpdf(c | 1, 1);  
     
     
     // Decision Data
