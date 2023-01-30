@@ -13,10 +13,8 @@ data {
     real<lower=0, upper=2> b;  // bias for category one over two
 
     // priors
-    //vector<lower=0, upper=1>[nfeatures] prior_w_mean;
-    //vector<lower=0, upper=1>[nfeatures] prior_w_var;
-    //real<lower=0> prior_c_mean;
-    //real<lower=0> prior_c_var;
+    array[2] int<lower=1> w_prior;
+    array[2] int<lower=1> c_prior;
 }
 
 transformed data {
@@ -59,7 +57,7 @@ transformed parameters {
             exemplar_dist[e] = sum(tmp_dist);
         }
 
-        if (i==3 || sum(cat_one[:(i-1)])==0 || sum(cat_two[:(i-1)])==0){  // if there are no examplars in one of the categories
+        if (sum(cat_one[:(i-1)])==0 || sum(cat_two[:(i-1)])==0){  // if there are no examplars in one of the categories
             r[i] = 0.5;
 
         } else {
@@ -78,13 +76,13 @@ transformed parameters {
 }
 
 model {
-    // fix this - add custom priors
     // Prior
-    target += beta_lpdf(w | 1, 1);
+    target += beta_lpdf(w | w_prior[1], w_prior[2]);
     // Missing a prior for c
-    target += beta_lpdf(c | 1, 1);  
+    target += beta_lpdf(c | c_prior[1], c_prior[2]);  
     
     
     // Decision Data
     target += binomial_lpmf(y | ntrials, r);
 }
+
