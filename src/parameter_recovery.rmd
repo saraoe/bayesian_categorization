@@ -1,0 +1,107 @@
+# Paramter recovery 
+
+```{r}
+# libraries
+library(pacman)
+pacman::p_load(tidyverse,
+               cmdstanr,
+               posterior
+               )
+
+source('thesis/bayesian_categorization/src/util.r')
+```
+
+```{r}
+# Load data (participant 1 in individual condition, only first session - lowest complexity)
+df <- read_csv('thesis/bayesian_categorization/data/AlienData.csv') %>% 
+        subset(condition == 1 & session == 1 & subject == 1)
+
+# Extract observations
+observations <- tibble(
+  f1 = as.numeric(substr(df$stimulus, 1, 1)),
+  f2 = as.numeric(substr(df$stimulus, 2, 2)),
+  f3 = as.numeric(substr(df$stimulus, 3, 3)),
+  f4 = as.numeric(substr(df$stimulus, 4, 4)),
+  f5 = as.numeric(substr(df$stimulus, 5, 5))
+)
+
+# make own simple categorization rule
+# f1 determines danger
+danger <- ifelse(observations$f1==1, 1, 0)
+```
+
+
+## Simulate responses
+```{r}
+# parameters
+c <- 3
+w <- rep(1/5, 5)  # equal weights for all dimensions
+
+# calculate responses
+responses <- gcm(w, c, 
+                 b=.5, 
+                 ntrials=nrow(observations),
+                 obs=observations,
+                 cat_one=danger)
+
+```
+
+## Run model
+```{r}
+# load model
+file <- file.path('thesis/bayesian_categorization/stan/gcm.stan')
+mod <- cmdstan_model(file, cpp_options = list(stan_threads=TRUE))
+print("Done compiling!")
+```
+
+```{r}
+# prepare data and run model
+data <- list(
+    ntrials = nrow(observations)),
+    nfeatures = ncol(observations),
+    cat_one = danger,
+    y = responses,
+    obs = as.matrix(observations),
+    b = .5,  # no bias
+    w_prior_values = rep(1,5),
+    c_prior_values = c(0,1)
+)
+
+samples <- mod$sample(
+  data = data,
+  seed = 123,
+  chains = 1,
+  parallel_chains = 1,
+  threads_per_chain = 2,
+  iter_warmup = 100,
+  iter_sampling = 200,
+  refresh = 1000,
+  max_treedepth = 20,
+  adapt_delta = 0.99
+)
+
+samples$summary()
+draws_df <- as_draws_df(samples$draws())
+```
+
+## plots
+```{r}
+ggplot(data = draws_df) + 
+    geom_density(aes(x=c), fill='blue', alpha=.5) + 
+    geom_vline(aes(xintercept=3), linetype = "dashed") +
+    theme_bw()
+```
+
+```{r}
+weights_draws_df <- draws_df %>% 
+    pivot_longer(c("w[1]", "w[2]", "w[3]", "w[4]", "w[5]"), names_to="features", values_to="weights") %>%
+    mutate(feature_number = str_extract(features, "\\d+")) %>%
+    select(c(feature_number, weights)) 
+
+ggplot(data = weights_draws_df) + 
+    geom_density(aes(x=weights), fill='blue', alpha=.5) + 
+    geom_vline(aes(xintercept=1/5), linetype = "dashed") +
+    theme_bw() + facet_wrap(.~feature_number)
+```
+
+
