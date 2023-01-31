@@ -13,8 +13,8 @@ data {
     real<lower=0, upper=2> b;  // bias for category one over two
 
     // priors
-    array[2] int<lower=1> w_prior;
-    array[2] int<lower=1> c_prior;
+    vector<lower=1>[nfeatures] w_prior_values;  // concentration parameters for dirichlet distribution
+    array[2] int c_prior_values;  // mean and variance for logit-normal distribution
 }
 
 transformed data {
@@ -38,11 +38,15 @@ transformed data {
 }
 
 parameters {
-    vector<lower=0, upper=1>[nfeatures] w;
-    real<lower=0> c;
+    simplex[nfeatures] w;  // simplex means sum(w)=1
+    real logit_c;
 }
 
 transformed parameters {
+    // inv_logit of c 
+    real<lower=0, upper=5> c = inv_logit(logit_c)*5;  // times 5 as c is bounded between 0 and 5
+
+    // parameter r (probability of response = category 1)
     array[ntrials] real<lower=0, upper=1> r;
 
     for (i in 1:ntrials) {
@@ -76,13 +80,19 @@ transformed parameters {
 }
 
 model {
-    // Prior
-    target += beta_lpdf(w | w_prior[1], w_prior[2]);
-    // Missing a prior for c
-    target += beta_lpdf(c | c_prior[1], c_prior[2]);  
+    // Priors
+    target += dirichlet_lpdf(w | w_prior_values);
+    target += normal_lpdf(logit_c | c_prior_values[1], c_prior_values[2]);
     
     
     // Decision Data
     target += binomial_lpmf(y | ntrials, r);
 }
 
+generated quantities {
+    // priors
+   simplex[nfeatures] w_prior = dirichlet_rng(w_prior_values);
+   real logit_c_prior = normal_rng(c_prior_values[1], c_prior_values[2]);
+   real<lower=0, upper=5> c_prior = inv_logit(logit_c_prior)*5;
+
+}
