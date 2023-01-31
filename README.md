@@ -6,8 +6,11 @@ The ability to form categories is essential for understanding external input and
 
 ````
 ├── README.md       <- The top-level README for this project.
-├── data                       
+├── data 
+│   └── ...         <-                      
 ├── stan 
 │   └── ...         <- stan scripts
-└── data_inspection.rmd 
+├── src 
+│   ├── parameter_recovery
+│   └── ... 
 ````
