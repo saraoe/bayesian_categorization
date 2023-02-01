@@ -95,4 +95,41 @@ generated quantities {
    real logit_c_prior = normal_rng(c_prior_values[1], c_prior_values[2]);
    real<lower=0, upper=5> c_prior = inv_logit(logit_c_prior)*5;
 
+   // prior pred
+    array[ntrials] real<lower=0, upper=1> r_prior;
+    for (i in 1:ntrials) {
+
+        // calculate distance from obs to all exemplars
+        array[(i-1)] real exemplar_dist;
+        for (e in 1:(i-1)){
+            array[nfeatures] real tmp_dist;
+            for (j in 1:nfeatures) {
+                tmp_dist[j] = w_prior[j]*abs(obs[e,j] - obs[i,j]);
+            }
+            exemplar_dist[e] = sum(tmp_dist);
+        }
+
+        if (sum(cat_one[:(i-1)])==0 || sum(cat_two[:(i-1)])==0){  // if there are no examplars in one of the categories
+            r_prior[i] = 0.5;
+
+        } else {
+            // calculate similarity
+            array[2] real similarities;
+            
+            array[sum(cat_one[:(i-1)])] int tmp_idx_one = cat_one_idx[:sum(cat_one[:(i-1)])];
+            array[sum(cat_two[:(i-1)])] int tmp_idx_two = cat_two_idx[:sum(cat_two[:(i-1)])];
+            similarities[1] = exp(-c_prior * sum(exemplar_dist[tmp_idx_one]));
+            similarities[2] = exp(-c_prior * sum(exemplar_dist[tmp_idx_two]));
+
+            // calculate r[i]
+            r_prior[i] = (b*similarities[1]) / (b*similarities[1] + (1-b)*similarities[2]);
+        }
+    }
+
+    array[ntrials] int<lower=0, upper=1> priorpred = bernoulli_rng(r_prior);
+
+
+   // posterior pred
+   array[ntrials] int<lower=0, upper=1> posteriorpred = bernoulli_rng(r);
+
 }
