@@ -43,7 +43,7 @@ parameters {
 }
 
 transformed parameters {
-    // inv_logit of c 
+    // parameter c 
     real<lower=0, upper=5> c = inv_logit(logit_c)*5;  // times 5 as c is bounded between 0 and 5
 
     // parameter r (probability of response = category 1)
@@ -86,7 +86,7 @@ model {
     
     
     // Decision Data
-    target += binomial_lpmf(y | ntrials, r);
+    target += bernoulli_lpmf(y | r);
 }
 
 generated quantities {
