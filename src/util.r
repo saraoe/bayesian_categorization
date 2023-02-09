@@ -1,5 +1,33 @@
 ### Util functions ###
 
+# simulate data
+binary_observations <- function(n_obs, n_features){
+    observations <- tibble(
+        f1 = sample(c(0,1), replace=TRUE, size=n_obs)
+        )
+    for (i in 2:n_features){
+        tmp <- sample(c(0,1), replace=TRUE, size=n_obs)
+        eval(parse(
+            text = paste("observations$f", i, " <- tmp", sep="")
+        ))
+    }
+    return (observations)
+}
+
+continuous_observations <- function(n_obs, n_features, range=c(0,1)){
+    observations <- tibble(
+        f1 = runif(n=n_obs, min=range[1], max=range[2])
+        )
+    for (i in 2:n_features){
+        tmp <- runif(n=n_obs, min=range[1], max=range[2])
+        eval(parse(
+            text = paste("observations$f", i, " <- tmp", sep="")
+        ))
+    }
+    return (observations)
+}
+
+
 # GCM 
 distance <- function(vect1, vect2, w){
     return (sum(w * abs(vect1 - vect2)))
@@ -9,11 +37,11 @@ similarity <- function(distance, c) {
     return (exp( -c * distance))
 }
 
-gcm <- function(w, c, b, ntrials, obs, cat_one) {
+gcm <- function(w, c, b, ntrials, obs, cat_one, quiet=T) {
 
     r <- c()
     for (i in 1:ntrials){
-        if (i%%10==0){
+        if (!quiet & i%%10==0){
             print(paste('i =', i))
         }
         
