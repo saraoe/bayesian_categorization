@@ -10,7 +10,7 @@ data {
     array[ntrials] int<lower=0, upper=1> cat_one;
     array[ntrials] int<lower=0, upper=1> y;  // true reponses
     array[ntrials, nfeatures] int<lower=0, upper=1> obs;
-    real<lower=0, upper=2> b;  // bias for category one over two
+    real<lower=0, upper=1> b;  // bias for category one over two
 
     // priors
     vector<lower=1>[nfeatures] w_prior_values;  // concentration parameters for dirichlet distribution
