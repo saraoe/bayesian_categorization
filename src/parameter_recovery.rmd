@@ -12,6 +12,7 @@ source('src/util.r')
 ```
 
 ```{r}
+# Alien data
 # Load data (participant 1 in individual condition, only first session - lowest complexity)
 df <- read_csv('data/AlienData.csv') %>% 
         subset(condition == 1 & session == 1 & subject == 2)
@@ -24,16 +25,25 @@ observations <- tibble(
   f4 = as.numeric(substr(df$stimulus, 4, 4)),
   f5 = as.numeric(substr(df$stimulus, 5, 5))
 )
-
-# simulate observations
-n_obs <- 208
-n_features <- 5
-observations <- binary_observations(n_obs, n_features)
-
 # make own simple categorization rule
 # f1 + f2 determines danger (resembles low complexity)
 danger <- ifelse(observations$f1==1 & observations$f2==1, 1, 0)
-danger <- ifelse(observations$f1>.5 & observations$f2>.5, 1, 0)
+```
+```{r}
+# simulate observations
+n_obs <- 104
+n_features <- 5
+type <- "continuous"
+
+observations <- simulate_observations(n_obs, n_features, type)
+
+# make own simple categorization rule
+# f1 + f2 determines danger (resembles low complexity)
+if (type=="binary"){
+  danger <- ifelse(observations$f1==1 & observations$f2==1, 1, 0)
+} else if (type=="continuous"){
+  danger <- ifelse(observations$f1>.5 & observations$f2>.5, 1, 0)
+}
 ```
 
 ```{r}
@@ -43,7 +53,7 @@ mod <- cmdstan_model(file, cpp_options = list(stan_threads=TRUE))
 print("Done compiling!")
 ```
 
-## Simulate data and run model
+## Simulate responses and run model
 ```{r}
 # parameters
 c_parameters <- c(0.1, 1, 2, 3)

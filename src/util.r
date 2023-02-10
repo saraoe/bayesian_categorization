@@ -27,6 +27,15 @@ continuous_observations <- function(n_obs, n_features, range=c(0,1)){
     return (observations)
 }
 
+simulate_observations <- function(n_obs, n_feature, type){
+    if (type=="binary"){
+        return (binary_observations(n_obs, n_features))
+    }
+
+    if (type=="continuous"){
+        return (continuous_observations(n_obs, n_features))
+    }
+}
 
 # GCM 
 distance <- function(vect1, vect2, w){
