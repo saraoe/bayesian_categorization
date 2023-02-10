@@ -1,4 +1,4 @@
-data/*
+data/AlienData.csv
 data_inspection.rmd
 
 stan/*.exe
