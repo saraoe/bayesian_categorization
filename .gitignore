@@ -2,3 +2,5 @@ data/AlienData.csv
 data_inspection.rmd
 
 stan/*.exe
+.Rproj.user
+GCM_thesis.Rproj

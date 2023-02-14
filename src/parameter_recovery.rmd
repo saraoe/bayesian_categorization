@@ -28,7 +28,9 @@ observations <- tibble(
 # make own simple categorization rule
 # f1 + f2 determines danger (resembles low complexity)
 danger <- ifelse(observations$f1 == 1 & observations$f2 == 1, 1, 0)
+
 ```
+
 ```{r}
 # simulate observations
 n_obs <- 208
@@ -39,21 +41,21 @@ observations <- simulate_observations(n_obs, n_features, type)
 
 # make own simple categorization rule
 # f1 + f2 determines danger (resembles low complexity)
-if (type == "binary"){
+if (type == "binary") {
   danger <- ifelse(observations$f1 == 1 & observations$f2 == 1, 1, 0)
-} else if (type == "continuous"){
+} else if (type == "continuous") {
   danger <- ifelse(observations$f1 > .5 & observations$f2 > .5, 1, 0)
 }
 
 
-binary_update <- function(col){ifelse(col==1, 0.999, 0.001)}
+binary_update <- function(col){ifelse(col == 1, 0.999, 0.001)}
 observations <- observations %>% mutate_all(binary_update)
 ```
 
 ```{r}
 # load model
 file <- file.path("stan/gcm.stan")
-mod <- cmdstan_model(file, cpp_options = list(stan_threads=TRUE))
+mod <- cmdstan_model(file, cpp_options = list(stan_threads = TRUE), stanc_options = list("O1"))
 print("Done compiling!")
 ```
 
@@ -64,8 +66,10 @@ c_parameters <- c(0.1, 1) # c(0.1, 1, 2, 3)
 # w <- rep(1/5, 5)  # equal weights for all features
 w <- c(1, rep(0,4))  # all weight to first feature
 
+inits_chain <- list(list(logit_c = 1, w = rep(.2,5)))
+
 rm(recovery_df)  # remove in case it is already defined
-for (c in c_parameters){
+for (c in c_parameters) {
   print(paste("c =", c))
   # calculate responses
   responses <- gcm(w, c,
@@ -92,6 +96,7 @@ for (c in c_parameters){
     chains = 1,
     parallel_chains = 1,
     threads_per_chain = 2,
+    init = inits_chain,
     iter_warmup = 1000,
     iter_sampling = 2000,
     refresh = 1000,
@@ -102,7 +107,7 @@ for (c in c_parameters){
   draws_df <- as_draws_df(samples$draws())
   draws_df$c_parameter <- c
 
-  if (exists("recovery_df")){
+  if (exists("recovery_df")) {
     recovery_df <- rbind(recovery_df, draws_df)
   } else {
     recovery_df <- draws_df
