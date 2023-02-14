@@ -3,10 +3,11 @@
 ```{r}
 # libraries
 library(pacman)
-pacman::p_load(tidyverse,
-               cmdstanr,
-               posterior
-               )
+pacman::p_load(
+  tidyverse,
+  cmdstanr,
+  posterior
+)
 
 source("src/util.r")
 ```
@@ -14,11 +15,11 @@ source("src/util.r")
 ```{r}
 # Alien data
 # Load data (participant 1 in individual condition, only first session - lowest complexity)
-df <- read_csv("data/AlienData.csv") %>% 
-        subset(condition == 1 & session == 1 & subject == 1)
+df <- read_csv("data/AlienData.csv") %>%
+  subset(condition == 1 & session == 1 & subject == 1)
 
 # Extract observations
-observations <- tibble(
+observations <- dplyr::tibble(
   f1 = as.numeric(substr(df$stimulus, 1, 1)),
   f2 = as.numeric(substr(df$stimulus, 2, 2)),
   f3 = as.numeric(substr(df$stimulus, 3, 3)),
@@ -47,47 +48,59 @@ if (type == "binary") {
   danger <- ifelse(observations$f1 > .5 & observations$f2 > .5, 1, 0)
 }
 
-
-binary_update <- function(col){ifelse(col == 1, 0.999, 0.001)}
+# reparameterization of binary observations
+binary_update <- function(col) {
+  ifelse(col == 1, 0.999, 0.001)
+  }
 observations <- observations %>% mutate_all(binary_update)
+
 ```
 
 ```{r}
 # load model
 file <- file.path("stan/gcm.stan")
-mod <- cmdstan_model(file, cpp_options = list(stan_threads = TRUE), stanc_options = list("O1"))
+
+mod <- cmdstan_model(
+  file,
+  cpp_options = list(stan_threads = TRUE),
+  stanc_options = list("O1")
+)
 print("Done compiling!")
+
 ```
 
 ## Simulate responses and run model
 ```{r}
 # parameters
-c_parameters <- c(0.1, 1) # c(0.1, 1, 2, 3)
-# w <- rep(1/5, 5)  # equal weights for all features
-w <- c(1, rep(0,4))  # all weight to first feature
+c_parameters <- c(0.1, 1, 2, 3)
+w <- rep(1 / 5, 5) # equal weights for all features
+# w <- c(1, rep(0,4))  # all weight to first feature
 
-inits_chain <- list(list(logit_c = 1, w = rep(.2,5)))
+# inits chain
+inits_chain <- list(list(logit_c = 1, w = rep(.2, 5)))
 
-rm(recovery_df)  # remove in case it is already defined
+rm(recovery_df) # remove in case it is already defined
+
 for (c in c_parameters) {
   print(paste("c =", c))
   # calculate responses
   responses <- gcm(w, c,
-                  b = .5,
-                  ntrials = nrow(observations),
-                  obs = observations,
-                  cat_one = danger)
+    b = .5,
+    ntrials = nrow(observations),
+    obs = observations,
+    cat_one = danger
+  )
 
   # prepare data and run model
   data <- list(
-      ntrials = nrow(observations),
-      nfeatures = ncol(observations),
-      cat_one = danger,
-      y = responses,
-      obs = as.matrix(observations),
-      b = .5,  # no bias
-      w_prior_values = rep(1,5),
-      c_prior_values = c(0,1)
+    ntrials = nrow(observations),
+    nfeatures = ncol(observations),
+    cat_one = danger,
+    y = responses,
+    obs = as.matrix(observations),
+    b = .5, # no bias
+    w_prior_values = rep(1, 5),
+    c_prior_values = c(0, 1)
   )
 
   samples <- mod$sample(
@@ -95,11 +108,11 @@ for (c in c_parameters) {
     seed = 123,
     chains = 1,
     parallel_chains = 1,
-    threads_per_chain = 2,
-    init = inits_chain,
+    threads_per_chain = 4,
     iter_warmup = 1000,
     iter_sampling = 2000,
     refresh = 1000,
+    init = inits_chain,
     max_treedepth = 20,
     adapt_delta = 0.99
   )
@@ -113,7 +126,6 @@ for (c in c_parameters) {
     recovery_df <- draws_df
   }
 }
-
 ```
 
 ```{r}
@@ -125,74 +137,82 @@ for (c in c_parameters) {
 
 ```{r}
 ggplot(data = recovery_df) +
-    geom_density(aes(x=c_prior), fill="blue", alpha=.5) +
-    geom_vline(aes(xintercept=c_parameter), linetype = "dashed") +
-    theme_bw() + facet_wrap(.~c_parameter)
+  geom_density(aes(x = c_prior), fill = "blue", alpha = .5) +
+  geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
+  theme_bw() +
+  facet_wrap(. ~ c_parameter)
 ```
 ```{r}
-ggplot(data = recovery_df) + 
-    geom_density(aes(x=c), fill="blue", alpha=.5) +
-    geom_vline(aes(xintercept=c_parameter), linetype = "dashed") +
-    theme_bw() + facet_wrap(.~c_parameter)
+ggplot(data = recovery_df) +
+  geom_density(aes(x = c), fill = "blue", alpha = .5) +
+  geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
+  theme_bw() +
+  facet_wrap(. ~ c_parameter)
 ```
 
 ```{r}
-recovery_df %>% group_by(c_parameter) %>%
-    summarize(
-      mean_c = mean(c),
-      sd_c = sd(c),
-      mean_c_prior = mean(c_prior),
-      sd_c_prior = sd(c_prior),
-    )
+recovery_df %>%
+  group_by(c_parameter) %>%
+  summarize(
+    mean_c = mean(c),
+    sd_c = sd(c),
+    mean_c_prior = mean(c_prior),
+    sd_c_prior = sd(c_prior),
+  )
 ```
 
 ```{r}
 rm(weights_draws_df)
 
-for (i in 1:length(c_parameters)){
-  tmp <- recovery_df %>% filter(c_parameter==c_parameters[i]) %>% 
-      pivot_longer(
-        c("w[1]", "w[2]", "w[3]", "w[4]", "w[5]"),
-        names_to="features", values_to="weights") %>%
-      mutate(feature_number = str_extract(features, "\\d+")) %>%
-      select(c(feature_number, weights)) %>%
-      mutate(
-        w_parameter = w[as.numeric(feature_number)],
-        c_parameter = c_parameters[i]
-      )
+for (i in 1:length(c_parameters)) {
+  tmp <- recovery_df %>%
+    filter(c_parameter == c_parameters[i]) %>%
+    pivot_longer(
+      c("w[1]", "w[2]", "w[3]", "w[4]", "w[5]"),
+      names_to = "features", values_to = "weights"
+    ) %>%
+    mutate(feature_number = str_extract(features, "\\d+")) %>%
+    select(c(feature_number, weights)) %>%
+    mutate(
+      w_parameter = w[as.numeric(feature_number)],
+      c_parameter = c_parameters[i]
+    )
 
-  if (exists("weights_draws_df")){
+  if (exists("weights_draws_df")) {
     weights_draws_df <- rbind(weights_draws_df, tmp)
   } else {
     weights_draws_df <- tmp
   }
 }
-
-
 ```
 
 ```{r}
-weights_draws_df %>% group_by(c_parameter, feature_number) %>%
-    summarize(
-      w_mean = mean(weights),
-      sd_w = sd(weights)
-    )
-
+weights_draws_df %>%
+  group_by(c_parameter, feature_number) %>%
+  summarize(
+    w_mean = mean(weights),
+    sd_w = sd(weights)
+  )
 ```
 
 ```{r}
 ggplot(data = weights_draws_df) +
-    geom_density(aes(x=weights), fill="blue", alpha=.5) +
-    geom_vline(aes(xintercept=w_parameter), linetype = "dashed") +
-    theme_bw() + facet_wrap(.~feature_number)
+  geom_density(aes(x = weights), fill = "blue", alpha = .5) +
+  geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
+  theme_bw() +
+  facet_wrap(. ~ feature_number)
 
 ggplot(data = weights_draws_df) +
-    geom_density(
-      aes(x=weights, fill=as.character(c_parameter),
-      color=as.character(c_parameter)), alpha=.2
-      ) +
-    geom_vline(aes(xintercept=w_parameter), linetype = "dashed") +
-    theme_bw() + facet_wrap(.~feature_number)
+  geom_density(
+    aes(
+      x = weights, fill = as.character(c_parameter),
+      color = as.character(c_parameter)
+    ),
+    alpha = .2
+  ) +
+  geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
+  theme_bw() +
+  facet_wrap(. ~ feature_number)
 ```
 
 
