@@ -2,7 +2,7 @@
 
 # simulate data
 binary_observations <- function(n_obs, n_features) {
-    observations <- tibble(
+    observations <- dplyr::tibble(
         f1 = sample(c(0, 1), replace = TRUE, size = n_obs)
     )
     for (i in 2:n_features) {
@@ -15,7 +15,7 @@ binary_observations <- function(n_obs, n_features) {
 }
 
 continuous_observations <- function(n_obs, n_features, range = c(0, 1)) {
-    observations <- tibble(
+    observations <- dplyr::tibble(
         f1 = runif(n = n_obs, min = range[1], max = range[2])
     )
     for (i in 2:n_features) {
@@ -46,14 +46,14 @@ similarity <- function(distance, c) {
     return(exp(-c * distance))
 }
 
-gcm <- function(w, c, b, ntrials, obs, cat_one, quiet = T) {
+gcm <- function(w, c, b, ntrials, obs, cat_one, quiet = TRUE) {
     r <- c()
     for (i in 1:ntrials) {
-        if (!quiet & i %% 10 == 0) {
+        if (!quiet && i %% 10 == 0) {
             print(paste("i =", i))
         }
 
-        if (i == 1 | sum(cat_one[1:(i - 1)]) == 0 | sum(cat_one[1:(i - 1)]) == (i - 1)) {
+        if (i == 1 || sum(cat_one[1:(i - 1)]) == 0 || sum(cat_one[1:(i - 1)]) == (i - 1)) {
             r <- c(r, .5)
         } else {
             similarities <- c()
