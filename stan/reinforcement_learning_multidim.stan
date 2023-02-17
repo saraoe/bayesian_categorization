@@ -17,8 +17,8 @@ data {
 }
 
 transformed data {
-  vector[2] initValues;  // initial value
-  initValues = rep_vector(0.5, 2);
+  matrix[2, nfeatures] initValues;  // initial value
+  initValues = rep_matrix(0, 2, nfeatures);
 
   array[ntrials] int<lower=-1, upper=1> feedback;
   for (t in 1:ntrials){
@@ -41,9 +41,10 @@ transformed parameters {
 
 model {
     real pe;
-    vector[2, nfeatures] values;
+    matrix[2, nfeatures] values;
+    vector[nfeatures] value_sum;
     real theta;
-    int f;
+    int f_val;
 
     // priors
     target += normal_lpdf(logit_alpha | alpha_prior_values[1], alpha_prior_values[2]);
@@ -51,12 +52,16 @@ model {
     values = initValues; 
     
     for (t in 1:ntrials){  // loop over each trial
-        f = obs[t]+1;
-        theta = inv_logit(values[f]);
+        for (f in 1:nfeatures){
+            f_val = obs[t, f]+1;
+            value_sum[f] = values[f_val, f];
+
+            pe = feedback[t] - values[f_val, f];
+            values[f_val, f] = values[f_val, f] + alpha*pe;  //only update value for the observed feature
+        }
+
+        theta = inv_logit(sum(value_sum));
         target += bernoulli_lpmf(y[t] | theta);
-      
-        pe = feedback[t] - values[f];
-        values[f] = values[f] + alpha*pe;  //only update value for the chosen category
     
     }
 }
