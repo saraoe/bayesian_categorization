@@ -18,7 +18,7 @@ data {
 
 transformed data {
   vector[2] initValues;  // initial value
-  initValues = rep_vector(0.5, 2);
+  initValues = rep_vector(0, 2);
 
   array[ntrials] int<lower=-1, upper=1> feedback;
   for (t in 1:ntrials){
@@ -56,7 +56,7 @@ model {
         target += bernoulli_lpmf(y[t] | theta);
       
         pe = feedback[t] - values[f];
-        values[f] = values[f] + alpha*pe;  //only update value for the chosen category
+        values[f] = values[f] + alpha*pe;  //only update value for the observed feature
     
     }
 }
