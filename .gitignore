@@ -2,6 +2,8 @@ data/AlienData.csv
 data_inspection.rmd
 
 test_models/*
+stan/bias*
+stan/gcm_onedim*
 
 stan/*.exe
 .Rproj.user
