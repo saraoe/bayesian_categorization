@@ -49,10 +49,10 @@ if (type == "binary") {
 }
 
 # reparameterization of binary observations
-binary_update <- function(col) {
-  ifelse(col == 1, 0.999, 0.001)
-  }
-observations <- observations %>% mutate_all(binary_update)
+# binary_update <- function(col) {
+#   ifelse(col == 1, 0.999, 0.001)
+#   }
+# observations <- observations %>% mutate_all(binary_update)
 
 ```
 
@@ -73,11 +73,11 @@ print("Done compiling!")
 ```{r}
 # parameters
 c_parameters <- c(0.1, 1, 2, 3)
-w <- rep(1 / 5, 5) # equal weights for all features
-# w <- c(1, rep(0,4))  # all weight to first feature
+# w <- rep(1 / 5, 5) # equal weights for all features
+w <- c(1, rep(0,4))  # all weight to first feature
 
 # inits chain
-inits_chain <- list(list(logit_c = 1, w = rep(.2, 5)))
+inits_chain <- list(list(logit_c = 0.5, w = rep(.2, 5)))
 
 rm(recovery_df) # remove in case it is already defined
 

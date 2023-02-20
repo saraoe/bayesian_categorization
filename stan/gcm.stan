@@ -5,24 +5,23 @@
 // NB: No multilevel modelling
 
 data {
-    int<lower=1> ntrials;
-    int<lower=1> nfeatures;
-    array[ntrials] int<lower=0, upper=1> cat_one;
-    array[ntrials] int<lower=0, upper=1> y;  // true reponses
-    array[ntrials, nfeatures] int<lower=0, upper=1> obs;
-    real<lower=0, upper=1> b;  // bias for category one over two
+    int<lower=1> ntrials;  // number of trials
+    int<lower=1> nfeatures;  // number of predefined relevant features
+    array[ntrials] int<lower=0, upper=1> cat_one; // true responses on a trial by trial basis
+    array[ntrials] int<lower=0, upper=1> y;  // decisions on a trial by trial basis
+    array[ntrials, nfeatures] int<lower=0, upper=1> obs; // stimuli as vectors of features
+    real<lower=0, upper=1> b;  // initial bias for category one over two
 
     // priors
-    vector<lower=1>[nfeatures] w_prior_values;  // concentration parameters for dirichlet distribution
+    vector[nfeatures] w_prior_values;  // concentration parameters for dirichlet distribution <lower=1>
     array[2] int c_prior_values;  // mean and variance for logit-normal distribution
 }
 
 transformed data {
-    array[ntrials] int<lower=0, upper=1> cat_two;
-    array[sum(cat_one)] int<lower=1, upper=ntrials> cat_one_idx;
-    array[ntrials-sum(cat_one)] int<lower=1, upper=ntrials> cat_two_idx;
-
-    int idx_one = 1;
+    array[ntrials] int<lower=0, upper=1> cat_two; // dummy variable for category two over cat 1
+    array[sum(cat_one)] int<lower=1, upper=ntrials> cat_one_idx; // array of which stimuli are cat 1
+    array[ntrials-sum(cat_one)] int<lower=1, upper=ntrials> cat_two_idx; //  array of which stimuli are cat 2
+    int idx_one = 1; // Initializing 
     int idx_two = 1;
     for (i in 1:ntrials){
         cat_two[i] = abs(cat_one[i]-1);
