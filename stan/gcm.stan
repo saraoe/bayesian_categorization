@@ -46,7 +46,8 @@ transformed parameters {
     real<lower=0, upper=5> c = inv_logit(logit_c)*5;  // times 5 as c is bounded between 0 and 5
 
     // parameter r (probability of response = category 1)
-    array[ntrials] real<lower=0, upper=1> r;
+    array[ntrials] real<lower=0.0001, upper=0.9999> r;
+    array[ntrials] real rr;
 
     for (i in 1:ntrials) {
 
@@ -73,7 +74,18 @@ transformed parameters {
             similarities[2] = exp(-c * sum(exemplar_dist[tmp_idx_two]));
 
             // calculate r[i]
-            r[i] = (b*similarities[1]) / (b*similarities[1] + (1-b)*similarities[2]);
+            rr[i] = (b*similarities[1]) / (b*similarities[1] + (1-b)*similarities[2]);
+
+            // to make the sampling work
+            if (rr[i] > 0.9999){
+                r[i] = 0.9999;
+            } else if (rr[i] < 0.0001) {
+                r[i] = 0.0001;
+            } else if (rr[i] > 0.0001 && rr[i] < 0.9999) {
+                r[i] = rr[i];
+            } else {
+                r[i] = 0.5;
+            }
         }
     }
 }
@@ -90,12 +102,13 @@ model {
 
 generated quantities {
     // priors
-   simplex[nfeatures] w_prior = dirichlet_rng(w_prior_values);
-   real logit_c_prior = normal_rng(c_prior_values[1], c_prior_values[2]);
-   real<lower=0, upper=5> c_prior = inv_logit(logit_c_prior)*5;
+    simplex[nfeatures] w_prior = dirichlet_rng(w_prior_values);
+    real logit_c_prior = normal_rng(c_prior_values[1], c_prior_values[2]);
+    real<lower=0, upper=5> c_prior = inv_logit(logit_c_prior)*5;
 
-   // prior pred
+    // prior pred
     array[ntrials] real<lower=0, upper=1> r_prior;
+    array[ntrials] real rr_prior;
     for (i in 1:ntrials) {
 
         // calculate distance from obs to all exemplars
@@ -121,14 +134,25 @@ generated quantities {
             similarities[2] = exp(-c_prior * sum(exemplar_dist[tmp_idx_two]));
 
             // calculate r[i]
-            r_prior[i] = (b*similarities[1]) / (b*similarities[1] + (1-b)*similarities[2]);
+            rr_prior[i] = (b*similarities[1]) / (b*similarities[1] + (1-b)*similarities[2]);
+
+            // to make the sampling work
+            if (rr_prior[i] == 1){
+                r_prior[i] = 0.9999;
+            } else if (rr_prior[i] == 0) {
+                r_prior[i] = 0.0001;
+            } else if (rr_prior[i] > 0 && rr_prior[i] < 1) {
+                r_prior[i] = rr_prior[i];
+            } else {
+                r_prior[i] = 0.5;
+            }
         }
     }
 
     array[ntrials] int<lower=0, upper=1> priorpred = bernoulli_rng(r_prior);
 
 
-   // posterior pred
-   array[ntrials] int<lower=0, upper=1> posteriorpred = bernoulli_rng(r);
+    // posterior pred
+    array[ntrials] int<lower=0, upper=1> posteriorpred = bernoulli_rng(r);
 
 }

@@ -71,7 +71,7 @@ print("Done compiling!")
 # parameters
 c_parameters <- c(0.1, 1, 2, 3)
 # w <- rep(1 / 5, 5) # equal weights for all features
-w <- c(1, rep(0,4))  # all weight to first feature
+w <- c(1, rep(0, 4)) # all weight to first feature
 
 # inits chain
 inits_chain <- list(list(logit_c = 0.5, w = rep(.2, 5)))
