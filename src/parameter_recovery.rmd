@@ -6,10 +6,14 @@ library(pacman)
 pacman::p_load(
   tidyverse,
   cmdstanr,
-  posterior
+  posterior,
+  future,
+  purrr,
+  furrr
 )
 
-source("src/util.r")
+source("../src/fit_param_recov.r")
+source("../src/util.r")
 ```
 
 ```{r}
@@ -46,17 +50,11 @@ if (type == "binary") {
 } else if (type == "continuous") {
   danger <- ifelse(observations$f1 > .5 & observations$f2 > .5, 1, 0)
 }
-
-# reparameterization of binary observations
-# binary_update <- function(col) {
-#   ifelse(col == 1, 0.999, 0.001)
-# }
-# observations <- observations %>% mutate_all(binary_update)
 ```
 
 ```{r}
 # load model
-file <- file.path("stan/gcm.stan")
+file <- file.path("../stan/gcm.stan")
 
 mod <- cmdstan_model(
   file,
@@ -123,6 +121,25 @@ for (c in c_parameters) {
     recovery_df <- draws_df
   }
 }
+```
+
+```{r}
+# multi cores
+plan(multisession, workers = 4)
+
+temp <- tibble(expand_grid(n_obs = 208,
+                           n_features = 5,
+                           type = "binary",
+                           c = c_parameters,
+                           w = "1,0,0,0,0")
+               ) 
+
+recovery_df <- future_pmap_dfr(temp, 
+                               param_recov_gcm, 
+                               .options = furrr_options(seed = TRUE)
+                               )
+
+param_recov_gcm(n_obs = 208, n_features = 5, type = "binary", c = 0.1, w = "1,0,0,0,0")
 ```
 
 ```{r}
