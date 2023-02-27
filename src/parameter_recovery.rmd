@@ -54,6 +54,7 @@ if (type == "binary") {
 
 ```{r}
 # load model
+# set_cmdstan_path('/work/MA_thesis/cmdstan-2.31.0')
 file <- file.path("../stan/gcm.stan")
 
 mod <- cmdstan_model(
@@ -127,19 +128,19 @@ for (c in c_parameters) {
 # multi cores
 plan(multisession, workers = 4)
 
+c_parameters <- c(0.1, 1, 2)
+
 temp <- tibble(expand_grid(n_obs = 208,
                            n_features = 5,
                            type = "binary",
                            c = c_parameters,
-                           w = "1,0,0,0,0")
+                           w = "10000")
                ) 
 
 recovery_df <- future_pmap_dfr(temp, 
                                param_recov_gcm, 
                                .options = furrr_options(seed = TRUE)
                                )
-
-param_recov_gcm(n_obs = 208, n_features = 5, type = "binary", c = 0.1, w = "1,0,0,0,0")
 ```
 
 ```{r}

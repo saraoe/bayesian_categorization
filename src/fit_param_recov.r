@@ -1,7 +1,7 @@
 ### fit parameter recovery ###
 
 # GCM
-param_recov_gcm <- function(n_obs, n_features, type, w, c, seed=100){
+param_recov_gcm <- function(n_obs, n_features, type, w, c, seed=101){
   set.seed(seed)
   
   print(paste("c =", c))
@@ -19,10 +19,10 @@ param_recov_gcm <- function(n_obs, n_features, type, w, c, seed=100){
     danger <- ifelse(observations$f1 > .5 & observations$f2 > .5, 1, 0)
   }
   
+  
   # calculate responses
   responses <- gcm(
-                   #w = as.list(strsplit(w, ",")[[1]]), 
-                   w = c(1,0,0,0,0),
+                   w = as.integer(str_split(w, ",")[[1]]), 
                    c = c,
                    b = .5,
                    ntrials = nrow(observations),
@@ -42,6 +42,7 @@ param_recov_gcm <- function(n_obs, n_features, type, w, c, seed=100){
     c_prior_values = c(0, 1)
   )
   
+  set_cmdstan_path('/work/MA_thesis/cmdstan-2.31.0')
   samples <- mod$sample(
     data = data,
     seed = 123,
@@ -57,7 +58,7 @@ param_recov_gcm <- function(n_obs, n_features, type, w, c, seed=100){
   
   draws_df <- as_draws_df(samples$draws())
   draws_df$c_parameter <- c
-  draws_df$w <- w
+  draws_df$w_parameter <- w
   
   return(draws_df)
 }
