@@ -146,7 +146,7 @@ recovery_df <- future_pmap_dfr(temp,
 
 ```{r}
 # save df
-# write.csv(recovery_df, "data/recovery/parameter_recovery_binarydata208.csv")
+# write.csv(recovery_df, "../data/recovery/parameter_recovery_binarydata208.csv")
 ```
 
 ## plots
@@ -179,34 +179,39 @@ recovery_df %>%
 ```{r}
 rm(weights_draws_df)
 
-for (i in seq_along(c_parameters)) {
-  tmp <- recovery_df %>%
-    filter(c_parameter == c_parameters[i]) %>%
-    pivot_longer(
-      c("w[1]", "w[2]", "w[3]", "w[4]", "w[5]"),
-      names_to = "features", values_to = "weights"
-    ) %>%
-    mutate(feature_number = str_extract(features, "\\d+")) %>%
-    select(c(feature_number, weights)) %>%
-    mutate(
-      w_parameter = w[as.numeric(feature_number)],
-      c_parameter = c_parameters[i]
-    )
-
-  if (exists("weights_draws_df")) {
-    weights_draws_df <- rbind(weights_draws_df, tmp)
-  } else {
-    weights_draws_df <- tmp
+for (c_param in c_parameters) {
+  for (w_params in w_parameters){
+    print(w_params)
+    tmp <- recovery_df %>%
+      filter(c_parameter == c_param & w_parameter == w_params) %>%
+      pivot_longer(
+        c("w[1]", "w[2]", "w[3]", "w[4]", "w[5]"),
+        names_to = "features", values_to = "weights"
+      ) %>%
+      mutate(feature_number = str_extract(features, "\\d+")) %>%
+      select(c(feature_number, weights)) %>%
+      mutate(
+        w_parameter = as.numeric(str_split(w_params, ",")[[1]])[as.integer(feature_number)],
+        w_param_cond = w_params,
+        c_parameter = c_param
+      )
+  
+    if (exists("weights_draws_df")) {
+      weights_draws_df <- rbind(weights_draws_df, tmp)
+    } else {
+      weights_draws_df <- tmp
+    }
   }
 }
 ```
 
 ```{r}
 weights_draws_df %>%
-  group_by(c_parameter, feature_number) %>%
+  group_by(w_param_cond, feature_number) %>%
   summarize(
     w_mean = mean(weights),
-    sd_w = sd(weights)
+    sd_w = sd(weights),
+    true_w = unique(w_parameter)
   )
 ```
 
@@ -226,6 +231,18 @@ ggplot(data = weights_draws_df) +
     alpha = .2
   ) +
   geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
+  theme_bw() +
+  facet_wrap(. ~ feature_number)
+
+ggplot(data = weights_draws_df) +
+  geom_density(
+    aes(
+      x = weights, fill = w_param_cond,
+      color = w_param_cond
+    ),
+    alpha = .2
+  ) +
+  geom_vline(aes(xintercept = w_parameter, color = w_param_cond), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ feature_number)
 ```
