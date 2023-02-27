@@ -1,24 +1,26 @@
 // 
 // Rescorla-Wagner Reinforcement Learning
 // 
-// NB: Only one feature
 // NB: Only works with binary features
 // NB: Only works with two categories!
 // NB: No multilevel modelling
 
 data {
     int<lower=1> ntrials;
+    int<lower=1> nfeatures;
     array[ntrials] int<lower=0, upper=1> cat_one;
     array[ntrials] int<lower=0, upper=1> y;  // true reponses
-    array[ntrials] int<lower=0, upper=1> obs;
+    array[ntrials, nfeatures] int<lower=0, upper=1> obs;
 
     //priors
-    array[2] real alpha_prior_values;
+    array[2] real alpha_neg_prior_values;
+    array[2] real alpha_pos_prior_values;
+    array[2] real temp_prior_values;
 }
 
 transformed data {
-  vector[2] initValues;  // initial value
-  initValues = rep_vector(0, 2);
+  matrix[2, nfeatures] initValues;  // initial value
+  initValues = rep_matrix(0, 2, nfeatures);
 
   array[ntrials] int<lower=-1, upper=1> feedback;
   for (t in 1:ntrials){
@@ -31,37 +33,63 @@ transformed data {
 }
 
 parameters {
-    real logit_alpha;
+    real logit_alpha_neg;
+    real logit_alpha_pos;
+    real logit_temp;
 }
 
 transformed parameters {
-    // alpha parameter
-   real<lower=0, upper=1> alpha = inv_logit(logit_alpha);
+    // alpha parameters
+   real<lower=0, upper=1> alpha_neg = inv_logit(logit_alpha_neg);
+   real<lower=0, upper=1> alpha_pos = inv_logit(logit_alpha_pos);
+   // temperature parameter
+   real<lower=0, upper=20> temp = inv_logit(logit_temp)*20;  // upper bound is 20
 }
 
 model {
     real pe;
-    vector[2] values;
+    real alpha;
+    matrix[2, nfeatures] values;
+    vector[nfeatures] value_sum;
     real theta;
-    int f;
+    int f_val;
 
     // priors
-    target += normal_lpdf(logit_alpha | alpha_prior_values[1], alpha_prior_values[2]);
+    target += normal_lpdf(logit_alpha_neg | alpha_neg_prior_values[1], alpha_neg_prior_values[2]);
+    target += normal_lpdf(logit_alpha_pos | alpha_pos_prior_values[1], alpha_pos_prior_values[2]);
+    target += normal_lpdf(logit_temp | temp_prior_values[1], temp_prior_values[2]);
     
     values = initValues; 
     
     for (t in 1:ntrials){  // loop over each trial
-        f = obs[t]+1;
-        theta = inv_logit(values[f]);
+        for (f in 1:nfeatures){
+            f_val = obs[t, f]+1;
+            value_sum[f] = values[f_val, f];
+
+            pe = feedback[t] - values[f_val, f];
+
+            if (feedback[t]==-1){
+                alpha = alpha_neg;
+            } else if (feedback[t]==1){
+                alpha = alpha_pos;
+            }
+            values[f_val, f] = values[f_val, f] + alpha*pe;  //only update value for the observed feature
+        }
+
+        theta = inv_logit(temp * sum(value_sum));
         target += bernoulli_lpmf(y[t] | theta);
-      
-        pe = feedback[t] - values[f];
-        values[f] = values[f] + alpha*pe;  //only update value for the observed feature
     
     }
 }
 
 generated quantities {
-   real logit_alpha_prior = normal_rng(alpha_prior_values[1], alpha_prior_values[2]);
-   real alpha_prior = inv_logit(logit_alpha_prior);
+    // priors
+   real logit_alpha_neg_prior = normal_rng(alpha_neg_prior_values[1], alpha_neg_prior_values[2]);
+   real<lower=0, upper=1> alpha_neg_prior = inv_logit(logit_alpha_neg_prior);
+
+   real logit_alpha_pos_prior = normal_rng(alpha_pos_prior_values[1], alpha_pos_prior_values[2]);
+   real<lower=0, upper=1> alpha_pos_prior = inv_logit(logit_alpha_pos_prior);
+
+   real logit_temp_prior = normal_rng(temp_prior_values[1], temp_prior_values[2]);
+   real<lower=0, upper=20> temp_prior = inv_logit(logit_temp_prior)*20;
 }
