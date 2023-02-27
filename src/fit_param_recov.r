@@ -22,7 +22,7 @@ param_recov_gcm <- function(n_obs, n_features, type, w, c, seed=101){
   
   # calculate responses
   responses <- gcm(
-                   w = as.integer(str_split(w, ",")[[1]]), 
+                   w = as.numeric(str_split(w, ",")[[1]]), 
                    c = c,
                    b = .5,
                    ntrials = nrow(observations),
