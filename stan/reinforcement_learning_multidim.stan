@@ -14,6 +14,7 @@ data {
 
     //priors
     array[2] real alpha_prior_values;
+    array[2] real temp_prior_values;
 }
 
 transformed data {
@@ -32,11 +33,13 @@ transformed data {
 
 parameters {
     real logit_alpha;
+    real logit_temp;
 }
 
 transformed parameters {
     // alpha parameter
    real<lower=0, upper=1> alpha = inv_logit(logit_alpha);
+   real<lower=0, upper=20> temp = inv_logit(logit_temp)*20;  // upper bound is 20
 }
 
 model {
@@ -48,6 +51,7 @@ model {
 
     // priors
     target += normal_lpdf(logit_alpha | alpha_prior_values[1], alpha_prior_values[2]);
+    target += normal_lpdf(logit_temp | temp_prior_values[1], temp_prior_values[2]);
     
     values = initValues; 
     
@@ -60,13 +64,17 @@ model {
             values[f_val, f] = values[f_val, f] + alpha*pe;  //only update value for the observed feature
         }
 
-        theta = inv_logit(sum(value_sum));
+        theta = inv_logit(temp * sum(value_sum));
         target += bernoulli_lpmf(y[t] | theta);
     
     }
 }
 
 generated quantities {
+    // priors
    real logit_alpha_prior = normal_rng(alpha_prior_values[1], alpha_prior_values[2]);
-   real alpha_prior = inv_logit(logit_alpha_prior);
+   real<lower=0, upper=1> alpha_prior = inv_logit(logit_alpha_prior);
+
+   real logit_temp_prior = normal_rng(temp_prior_values[1], temp_prior_values[2]);
+   real<lower=0, upper=20> temp_prior = inv_logit(logit_temp_prior)*20;
 }
