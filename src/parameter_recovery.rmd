@@ -201,14 +201,12 @@ print("Done compiling!")
 plan(multisession, workers = 4)
 
 # parameters for observations
-# n_obs <- seq(from = 104, to = 104 * 3, length.out = 3)
-n_obs <- 300
+n_obs <- seq(from = 104, to = 104 * 3, length.out = 3)
 n_features <- 5
 
 # model parameters
-# alpha_parameters <- seq(from = 0, to = 1, length.out = 6)
-alpha_parameters <- c(0, 0.2, 0.4, 0.6)
-temp_parameters <- seq(from = 0, to = 10, length.out = 6)
+alpha_parameters <- seq(from = 0, to = 1, length.out = 4)
+temp_parameters <- seq(from = 0, to = 10, length.out = 4)
 
 # run model
 parameters <- tibble(expand_grid(n_obs = n_obs,
@@ -223,20 +221,6 @@ recovery_df <- future_pmap_dfr(parameters,
                                param_recov_rl, 
                                .options = furrr_options(seed = TRUE)
                                )
-
-for (true_alpha in alpha_parameters){
-  for (true_temp in temp_parameters){
-    draws_df <- param_recov_rl(n_obs = 300, n_features = 5, type = "binary",
-                               alpha_pos = true_alpha, alpha_neg = true_alpha,
-                               temp = true_temp)
-    
-    if (exists("test_df")) {
-        test_df <- rbind(test_df, draws_df)
-    } else {
-        test_df <- draws_df
-    }
-  }
-}
 ```
 
 ```{r}
@@ -245,6 +229,16 @@ for (true_alpha in alpha_parameters){
 ```
 
 ### inspection
+```{r}
+recovery_df %>% group_by(true_alpha_neg) %>% 
+  summarize(
+   mean_alpha_neg = mean(alpha_neg),
+   sd_alpha_neg = sd(alpha_neg),
+   mean_alpha_neg_prior = mean(alpha_neg_prior),
+   sd_alpha_neg_prior = sd(alpha_neg_prior)
+  )
+```
+
 ```{r}
 ggplot(data = recovery_df) +
     geom_density(aes(x = alpha_neg_prior), fill = "blue", alpha = .5) +
@@ -255,6 +249,16 @@ ggplot(data = recovery_df) +
     labs(title = "Prior Posterior update: Alpha_negative",
          caption = "Prior (blue) and posterior (red)") + 
     xlab("Alpha_negative")
+```
+
+```{r}
+recovery_df %>% group_by(true_alpha_pos) %>% 
+  summarize(
+   mean_alpha_pos = mean(alpha_pos),
+   sd_alpha_pos = sd(alpha_pos),
+   mean_alpha_pos_prior = mean(alpha_pos_prior),
+   sd_alpha_pos_prior = sd(alpha_pos_prior)
+  )
 ```
 
 ```{r}
@@ -335,6 +339,16 @@ ggplot(data = recovery_df) +
     labs(title = "Posterior update: Alpha_positive",
          fill = "Temperature") + 
     xlab("Alpha_positive")
+```
+
+```{r}
+recovery_df %>% group_by(true_temp) %>% 
+  summarize(
+   mean_temp = mean(temp),
+   sd_temp = sd(temp),
+   mean_temp_prior = mean(temp_prior),
+   sd_temp_prior = sd(temp_prior)
+  )
 ```
 
 ```{r}
