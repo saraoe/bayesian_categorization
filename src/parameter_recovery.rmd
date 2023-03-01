@@ -249,7 +249,7 @@ for (true_alpha in alpha_parameters){
 ggplot(data = recovery_df) +
     geom_density(aes(x = alpha_neg_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = alpha_neg), fill = "red", alpha = .5) +
-    geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
+    geom_vline(aes(xintercept = true_alpha_neg), linetype = "dashed") +
     theme_bw() +
     facet_wrap(. ~ true_alpha_neg) +
     labs(title = "Prior Posterior update: Alpha_negative",
@@ -261,7 +261,7 @@ ggplot(data = recovery_df) +
 ggplot(data = recovery_df) +
     geom_density(aes(x = alpha_pos_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = alpha_pos), fill = "red", alpha = .5) +
-    geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
+    geom_vline(aes(xintercept = true_alpha_pos), linetype = "dashed") +
     theme_bw() +
     facet_wrap(. ~ true_alpha_pos) + 
     labs(title = "Prior Posterior update: Alpha_positive",
@@ -278,7 +278,7 @@ ggplot(data = recovery_df) +
         ),
         alpha = .5
     ) +
-    geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
+    geom_vline(aes(xintercept = true_alpha_neg), linetype = "dashed") +
     theme_bw() +
     facet_wrap(. ~ true_alpha_neg) + 
     labs(title = "Posterior update: Alpha_negative",
@@ -295,7 +295,7 @@ ggplot(data = recovery_df) +
         ),
         alpha = .5
     ) +
-    geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
+    geom_vline(aes(xintercept = true_alpha_pos), linetype = "dashed") +
     theme_bw() +
     facet_wrap(. ~ true_alpha_pos) + 
     labs(title = "Posterior update: Alpha_positive",
