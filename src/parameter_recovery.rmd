@@ -184,7 +184,7 @@ weights_draws_df %>% filter(w_param_cond == filter_w_param) %>%
 ## Reinforcement Learning
 ```{r}
 # load model
-set_cmdstan_path('/work/MA_thesis/cmdstan-2.31.0')
+# set_cmdstan_path('/work/MA_thesis/cmdstan-2.31.0')
 file <- file.path("../stan/reinforcement_learning.stan")
 
 mod <- cmdstan_model(
@@ -214,7 +214,8 @@ temp_parameters <- seq(from = 0, to = 10, length.out = 6)
 parameters <- tibble(expand_grid(n_obs = n_obs,
                                  n_features = n_features,
                                  type = "binary",  # only works with binary features
-                                 alpha = alpha_parameters,
+                                 alpha_pos = alpha_parameters,
+                                 alpha_neg = alpha_parameters,
                                  temp = temp_parameters)
                ) 
 
@@ -225,7 +226,9 @@ recovery_df <- future_pmap_dfr(parameters,
 
 for (true_alpha in alpha_parameters){
   for (true_temp in temp_parameters){
-    draws_df <- param_recov_rl(n_obs = 300, n_features = 5, type = "binary", alpha = true_alpha, temp = true_temp)
+    draws_df <- param_recov_rl(n_obs = 300, n_features = 5, type = "binary",
+                               alpha_pos = true_alpha, alpha_neg = true_alpha,
+                               temp = true_temp)
     
     if (exists("test_df")) {
         test_df <- rbind(test_df, draws_df)
@@ -248,8 +251,8 @@ ggplot(data = recovery_df) +
     geom_density(aes(x = alpha_neg), fill = "red", alpha = .5) +
     geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_alpha) +
-    labs(title = "Prior Posterior update: Alpha_negative parameter",
+    facet_wrap(. ~ true_alpha_neg) +
+    labs(title = "Prior Posterior update: Alpha_negative",
          caption = "Prior (blue) and posterior (red)") + 
     xlab("Alpha_negative")
 ```
@@ -260,8 +263,8 @@ ggplot(data = recovery_df) +
     geom_density(aes(x = alpha_pos), fill = "red", alpha = .5) +
     geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_alpha) + 
-    labs(title = "Prior Posterior update: Alpha_positive parameter",
+    facet_wrap(. ~ true_alpha_pos) + 
+    labs(title = "Prior Posterior update: Alpha_positive",
          caption = "Prior (blue) and posterior (red)") + 
     xlab("Alpha_positive")
 ```
@@ -277,8 +280,8 @@ ggplot(data = recovery_df) +
     ) +
     geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_alpha) + 
-    labs(title = "Posterior update: Alpha_negative parameter",
+    facet_wrap(. ~ true_alpha_neg) + 
+    labs(title = "Posterior update: Alpha_negative",
          fill = "Number of observations") + 
     xlab("Alpha_negative")
 ```
@@ -294,8 +297,8 @@ ggplot(data = recovery_df) +
     ) +
     geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_alpha) + 
-    labs(title = "Posterior update: Alpha_positive parameter",
+    facet_wrap(. ~ true_alpha_pos) + 
+    labs(title = "Posterior update: Alpha_positive",
          color = "Number of observations") + 
     xlab("Alpha_positive")
 ```
@@ -309,11 +312,11 @@ ggplot(data = recovery_df) +
         ),
         alpha = .5
     ) +
-    geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
+    geom_vline(aes(xintercept = true_alpha_neg), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_alpha) + 
-    labs(title = "Posterior update: Alpha_negative parameter",
-         fill = "Temperature parameter") + 
+    facet_wrap(. ~ true_alpha_neg) + 
+    labs(title = "Posterior update: Alpha_negative",
+         fill = "Temperature") + 
     xlab("Alpha_negative")
 ```
 
@@ -326,11 +329,11 @@ ggplot(data = recovery_df) +
         ),
         alpha = .5
     ) +
-    geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
+    geom_vline(aes(xintercept = true_alpha_pos), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_alpha) + 
-    labs(title = "Posterior update: Alpha_positive parameter",
-         fill = "Temperature parameter") + 
+    facet_wrap(. ~ true_alpha_pos) + 
+    labs(title = "Posterior update: Alpha_positive",
+         fill = "Temperature") + 
     xlab("Alpha_positive")
 ```
 
@@ -341,23 +344,24 @@ ggplot(data = recovery_df) +
     geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
     theme_bw() +
     facet_wrap(. ~ true_temp) + 
-    labs(title = "Prior Posterior update: Temperature parameter",
+    labs(title = "Prior Posterior update: Temperature",
          caption = "Prior (blue) and posterior (red)") + 
     xlab("Temperature")
 ```
+
 ```{r}
 ggplot(data = recovery_df) +
     geom_density(
         aes(
             x = temp,
-            fill = as.character(true_alpha)
+            fill = as.character(true_alpha_neg)
         ),
         alpha = .5
     ) +
     geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
     theme_bw() +
     facet_wrap(. ~ true_temp) + 
-    labs(title = "Posterior update: Temperature parameter",
-         fill = "Alpha parameter") + 
+    labs(title = "Posterior update: Temperature",
+         fill = "Alpha_negative") + 
     xlab("Temperature")
 ```

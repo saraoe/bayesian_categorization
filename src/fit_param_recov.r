@@ -1,16 +1,16 @@
 ### fit parameter recovery ###
 
 # GCM
-param_recov_gcm <- function(n_obs, n_features, type, w, c, seed=101){
+param_recov_gcm <- function(n_obs, n_features, type, w, c, seed = 101) {
   set.seed(seed)
-  
+
   print(paste("c =", c))
   print(paste("w = ", w))
   print(paste("n_obs: ", n_obs, ", n_features: ", n_features, ", type: ", type))
-  
+
   # simulate data
   observations <- simulate_observations(n_obs, n_features, type)
-  
+
   # make own simple categorization rule
   # f1 + f2 determines danger (resembles low complexity)
   if (type == "binary") {
@@ -18,18 +18,18 @@ param_recov_gcm <- function(n_obs, n_features, type, w, c, seed=101){
   } else if (type == "continuous") {
     danger <- ifelse(observations$f1 > .5 & observations$f2 > .5, 1, 0)
   }
-  
-  
+
+
   # calculate responses
   responses <- gcm(
-                   w = as.numeric(str_split(w, ",")[[1]]), 
-                   c = c,
-                   b = .5,
-                   ntrials = nrow(observations),
-                   obs = observations,
-                   cat_one = danger
+    w = as.numeric(str_split(w, ",")[[1]]),
+    c = c,
+    b = .5,
+    ntrials = nrow(observations),
+    obs = observations,
+    cat_one = danger
   )
-  
+
   # prepare data and run model
   data <- list(
     ntrials = nrow(observations),
@@ -41,8 +41,8 @@ param_recov_gcm <- function(n_obs, n_features, type, w, c, seed=101){
     w_prior_values = rep(1, 5),
     c_prior_values = c(0, 1)
   )
-  
-  set_cmdstan_path('/work/MA_thesis/cmdstan-2.31.0')
+
+  set_cmdstan_path("/work/MA_thesis/cmdstan-2.31.0")
   samples <- mod$sample(
     data = data,
     seed = 123,
@@ -55,38 +55,40 @@ param_recov_gcm <- function(n_obs, n_features, type, w, c, seed=101){
     max_treedepth = 20,
     adapt_delta = 0.99
   )
-  
+
   draws_df <- as_draws_df(samples$draws())
   draws_df$c_parameter <- c
   draws_df$w_parameter <- w
-  
+
   return(draws_df)
 }
 
 
 # Reinforcement Learning
-param_recov_rl <- function(n_obs, n_features, type, alpha, temp, seed=101){
+param_recov_rl <- function(n_obs, n_features, type, alpha_pos, alpha_neg, temp, seed = 101) {
   set.seed(seed)
-  
-  print(paste("alpha =", alpha))
+
+  print(paste("alpha_pos =", alpha_pos))
+  print(paste("alpha_neg =", alpha_neg))
   print(paste("temp = ", temp))
   print(paste("n_obs: ", n_obs, ", n_features: ", n_features, ", type: ", type))
-  
+
   # simulate data
   observations <- simulate_observations(n_obs, n_features, type)
-  
+
   # make own simple categorization rule
   # f1 + f2 determines danger (resembles low complexity)
   danger <- ifelse(observations$f1 == 1 & observations$f2 == 1, 1, 0)
-  
+
   # calculate responses
   responses <- reinforcement_learning(
-    alpha = alpha, 
+    alpha_pos = alpha_pos,
+    alpha_neg = alpha_neg,
     temp = temp,
     obs = observations,
     cat_one = danger
   )
-  
+
   # prepare data and run model
   data <- list(
     ntrials = nrow(observations),
@@ -98,8 +100,8 @@ param_recov_rl <- function(n_obs, n_features, type, alpha, temp, seed=101){
     alpha_pos_prior_values = c(0, 1),
     temp_prior_values = c(0, 1)
   )
-  
-  set_cmdstan_path('/work/MA_thesis/cmdstan-2.31.0')
+
+  set_cmdstan_path("/work/MA_thesis/cmdstan-2.31.0")
   samples <- mod$sample(
     data = data,
     seed = 123,
@@ -112,12 +114,12 @@ param_recov_rl <- function(n_obs, n_features, type, alpha, temp, seed=101){
     max_treedepth = 20,
     adapt_delta = 0.99
   )
-  
+
   draws_df <- as_draws_df(samples$draws())
-  draws_df$true_alpha <- alpha
+  draws_df$true_alpha_pos <- alpha_pos
+  draws_df$true_alpha_neg <- alpha_neg
   draws_df$nobservations <- n_obs
   draws_df$true_temp <- temp
-  
+
   return(draws_df)
 }
-
