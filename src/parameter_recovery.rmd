@@ -13,45 +13,11 @@ pacman::p_load(
 )
 
 source("../src/fit_param_recov.r")
+source("../src/generative_models.r")
 source("../src/util.r")
 ```
 
-```{r}
-# Alien data
-# Load data (participant 1 in individual condition, only first session - lowest complexity)
-df <- read_csv("data/AlienData.csv") %>%
-  subset(condition == 1 & session == 1 & subject == 1)
-
-# Extract observations
-observations <- dplyr::tibble(
-  f1 = as.numeric(substr(df$stimulus, 1, 1)),
-  f2 = as.numeric(substr(df$stimulus, 2, 2)),
-  f3 = as.numeric(substr(df$stimulus, 3, 3)),
-  f4 = as.numeric(substr(df$stimulus, 4, 4)),
-  f5 = as.numeric(substr(df$stimulus, 5, 5))
-)
-# make own simple categorization rule
-# f1 + f2 determines danger (resembles low complexity)
-danger <- ifelse(observations$f1 == 1 & observations$f2 == 1, 1, 0)
-```
-
-```{r}
-# simulate observations
-n_obs <- 208
-n_features <- 5
-type <- "binary"
-
-observations <- simulate_observations(n_obs, n_features, type)
-
-# make own simple categorization rule
-# f1 + f2 determines danger (resembles low complexity)
-if (type == "binary") {
-  danger <- ifelse(observations$f1 == 1 & observations$f2 == 1, 1, 0)
-} else if (type == "continuous") {
-  danger <- ifelse(observations$f1 > .5 & observations$f2 > .5, 1, 0)
-}
-```
-
+## GCM
 ```{r}
 # load model
 # set_cmdstan_path('/work/MA_thesis/cmdstan-2.31.0')
@@ -65,80 +31,29 @@ mod <- cmdstan_model(
 print("Done compiling!")
 ```
 
-## Simulate responses and run model
-```{r}
-# parameters
-c_parameters <- c(0.1, 1, 2, 3)
-# w <- rep(1 / 5, 5) # equal weights for all features
-w <- c(1, rep(0, 4)) # all weight to first feature
-
-# inits chain
-inits_chain <- list(list(logit_c = 0.5, w = rep(.2, 5)))
-
-rm(recovery_df) # remove in case it is already defined
-
-for (c in c_parameters) {
-  print(paste("c =", c))
-  # calculate responses
-  responses <- gcm(w, c,
-    b = .5,
-    ntrials = nrow(observations),
-    obs = observations,
-    cat_one = danger
-  )
-
-  # prepare data and run model
-  data <- list(
-    ntrials = nrow(observations),
-    nfeatures = ncol(observations),
-    cat_one = danger,
-    y = responses,
-    obs = as.matrix(observations),
-    b = .5, # no bias
-    w_prior_values = rep(1, 5),
-    c_prior_values = c(0, 1)
-  )
-
-  samples <- mod$sample(
-    data = data,
-    seed = 123,
-    chains = 1,
-    parallel_chains = 1,
-    threads_per_chain = 4,
-    iter_warmup = 1000,
-    iter_sampling = 2000,
-    refresh = 1000,
-    init = inits_chain,
-    max_treedepth = 20,
-    adapt_delta = 0.99
-  )
-
-  draws_df <- as_draws_df(samples$draws())
-  draws_df$c_parameter <- c
-
-  if (exists("recovery_df")) {
-    recovery_df <- rbind(recovery_df, draws_df)
-  } else {
-    recovery_df <- draws_df
-  }
-}
-```
-
+### Simulate and run model
 ```{r}
 # multi cores
 plan(multisession, workers = 4)
 
-c_parameters <- seq(from=0, to=2, length.out=5)
+# parameters for observations
+n_obs <- 208
+n_features <- 5
+type <- "continuous"
+
+# model parameters
+c_parameters <- seq(from = 0, to = 2, length.out = 6)
 w_parameters <- c("1,0,0,0,0", "0.2,0.2,0.2,0.2,0.2")
 
-temp <- tibble(expand_grid(n_obs = 208,
-                           n_features = 5,
-                           type = "binary",
-                           c = c_parameters,
-                           w = w_parameters)
+# run model
+parameters <- tibble(expand_grid(n_obs = n_obs,
+                                 n_features = n_features,
+                                 type = type,
+                                 c = c_parameters,
+                                 w = w_parameters)
                ) 
 
-recovery_df <- future_pmap_dfr(temp, 
+recovery_df <- future_pmap_dfr(parameters, 
                                param_recov_gcm, 
                                .options = furrr_options(seed = TRUE)
                                )
@@ -146,23 +61,35 @@ recovery_df <- future_pmap_dfr(temp,
 
 ```{r}
 # save df
-# write.csv(recovery_df, "../data/recovery/parameter_recovery_binarydata208.csv")
+# write.csv(recovery_df, paste("../data/recovery/parameter_recovery_gcm", type, n_obs, ".csv", sep = ""))
 ```
 
-## plots
+### inspection
 ```{r}
 ggplot(data = recovery_df) +
   geom_density(aes(x = c_prior), fill = "blue", alpha = .5) +
+  geom_density(aes(x = c), fill = "red", alpha = .5) +
   geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
   theme_bw() +
-  facet_wrap(. ~ c_parameter)
+  facet_wrap(. ~ c_parameter) + 
+  labs(title = "Prior Posterior update: C parameter",
+       caption = "Prior (blue) and posterior (red)") + 
+  xlab("C")
 ```
+
 ```{r}
-ggplot(data = recovery_df) +
-  geom_density(aes(x = c), fill = "blue", alpha = .5) +
+filter_w_param <- w_parameters[1]
+
+recovery_df %>% filter(w_parameter == filter_w_param) %>% ggplot() +
+  geom_density(aes(x = c_prior), fill = "blue", alpha = .5) +
+  geom_density(aes(x = c), fill = "red", alpha = .5) +
   geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
   theme_bw() +
-  facet_wrap(. ~ c_parameter)
+  facet_wrap(. ~ c_parameter) + 
+  labs(title = "Prior Posterior update: C parameter",
+       subtitle = paste("filtered by w-parameter:", filter_w_param),
+       caption = "Prior (blue) and posterior (red)") + 
+  xlab("C")
 ```
 
 ```{r}
@@ -215,25 +142,8 @@ weights_draws_df %>%
   )
 ```
 
+
 ```{r}
-ggplot(data = weights_draws_df) +
-  geom_density(aes(x = weights), fill = "blue", alpha = .5) +
-  geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
-  theme_bw() +
-  facet_wrap(. ~ feature_number)
-
-ggplot(data = weights_draws_df) +
-  geom_density(
-    aes(
-      x = weights, fill = as.character(c_parameter),
-      color = as.character(c_parameter)
-    ),
-    alpha = .2
-  ) +
-  geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
-  theme_bw() +
-  facet_wrap(. ~ feature_number)
-
 ggplot(data = weights_draws_df) +
   geom_density(
     aes(
@@ -244,7 +154,210 @@ ggplot(data = weights_draws_df) +
   ) +
   geom_vline(aes(xintercept = w_parameter, color = w_param_cond), linetype = "dashed") +
   theme_bw() +
-  facet_wrap(. ~ feature_number)
+  facet_wrap(. ~ feature_number) + 
+  labs(title = "Posterior for W parameter",
+       color = "W parameters",
+       fill = "W parameters")
 ```
 
+```{r}
+filter_w_param <- w_parameters[1]
 
+weights_draws_df %>% filter(w_param_cond == filter_w_param) %>% 
+  ggplot() +
+  geom_density(
+    aes(
+      x = weights, fill = as.character(c_parameter),
+      color = as.character(c_parameter)
+    ),
+    alpha = .2
+  ) +
+  geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
+  theme_bw() +
+  facet_wrap(. ~ feature_number) + 
+  labs(title = "Posterior for W parameter",
+       subtitle = paste("filtered by w-parameter:", filter_w_param),
+       color = "C parameters",
+       fill = "C parameters")
+```
+
+## Reinforcement Learning
+```{r}
+# load model
+set_cmdstan_path('/work/MA_thesis/cmdstan-2.31.0')
+file <- file.path("../stan/reinforcement_learning.stan")
+
+mod <- cmdstan_model(
+  file,
+  cpp_options = list(stan_threads = TRUE),
+  # stanc_options = list("O1")
+)
+print("Done compiling!")
+```
+
+### Simulate and run model
+```{r}
+# multi cores
+plan(multisession, workers = 4)
+
+# parameters for observations
+# n_obs <- seq(from = 104, to = 104 * 3, length.out = 3)
+n_obs <- 300
+n_features <- 5
+
+# model parameters
+# alpha_parameters <- seq(from = 0, to = 1, length.out = 6)
+alpha_parameters <- c(0, 0.2, 0.4, 0.6)
+temp_parameters <- seq(from = 0, to = 10, length.out = 6)
+
+# run model
+parameters <- tibble(expand_grid(n_obs = n_obs,
+                                 n_features = n_features,
+                                 type = "binary",  # only works with binary features
+                                 alpha = alpha_parameters,
+                                 temp = temp_parameters)
+               ) 
+
+recovery_df <- future_pmap_dfr(parameters, 
+                               param_recov_rl, 
+                               .options = furrr_options(seed = TRUE)
+                               )
+
+for (true_alpha in alpha_parameters){
+  for (true_temp in temp_parameters){
+    draws_df <- param_recov_rl(n_obs = 300, n_features = 5, type = "binary", alpha = true_alpha, temp = true_temp)
+    
+    if (exists("test_df")) {
+        test_df <- rbind(test_df, draws_df)
+    } else {
+        test_df <- draws_df
+    }
+  }
+}
+```
+
+```{r}
+# save df
+# write.csv(recovery_df, paste("../data/recovery/parameter_recovery_rl.csv", sep = ""))
+```
+
+### inspection
+```{r}
+ggplot(data = recovery_df) +
+    geom_density(aes(x = alpha_neg_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = alpha_neg), fill = "red", alpha = .5) +
+    geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
+    theme_bw() +
+    facet_wrap(. ~ true_alpha) +
+    labs(title = "Prior Posterior update: Alpha_negative parameter",
+         caption = "Prior (blue) and posterior (red)") + 
+    xlab("Alpha_negative")
+```
+
+```{r}
+ggplot(data = recovery_df) +
+    geom_density(aes(x = alpha_pos_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = alpha_pos), fill = "red", alpha = .5) +
+    geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
+    theme_bw() +
+    facet_wrap(. ~ true_alpha) + 
+    labs(title = "Prior Posterior update: Alpha_positive parameter",
+         caption = "Prior (blue) and posterior (red)") + 
+    xlab("Alpha_positive")
+```
+
+```{r}
+ggplot(data = recovery_df) +
+    geom_density(
+        aes(
+            x = alpha_neg,
+            fill = as.character(nobservations)
+        ),
+        alpha = .5
+    ) +
+    geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
+    theme_bw() +
+    facet_wrap(. ~ true_alpha) + 
+    labs(title = "Posterior update: Alpha_negative parameter",
+         fill = "Number of observations") + 
+    xlab("Alpha_negative")
+```
+
+```{r}
+ggplot(data = recovery_df) +
+    geom_density(
+        aes(
+            x = alpha_pos,
+            fill = as.character(nobservations)
+        ),
+        alpha = .5
+    ) +
+    geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
+    theme_bw() +
+    facet_wrap(. ~ true_alpha) + 
+    labs(title = "Posterior update: Alpha_positive parameter",
+         color = "Number of observations") + 
+    xlab("Alpha_positive")
+```
+
+```{r}
+ggplot(data = recovery_df) +
+    geom_density(
+        aes(
+            x = alpha_neg,
+            fill = as.character(true_temp)
+        ),
+        alpha = .5
+    ) +
+    geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
+    theme_bw() +
+    facet_wrap(. ~ true_alpha) + 
+    labs(title = "Posterior update: Alpha_negative parameter",
+         fill = "Temperature parameter") + 
+    xlab("Alpha_negative")
+```
+
+```{r}
+ggplot(data = recovery_df) +
+    geom_density(
+        aes(
+            x = alpha_pos,
+            fill = as.character(true_temp)
+        ),
+        alpha = .5
+    ) +
+    geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
+    theme_bw() +
+    facet_wrap(. ~ true_alpha) + 
+    labs(title = "Posterior update: Alpha_positive parameter",
+         fill = "Temperature parameter") + 
+    xlab("Alpha_positive")
+```
+
+```{r}
+ggplot(data = recovery_df) +
+    geom_density(aes(x = temp_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = temp), fill = "red", alpha = .5) +
+    geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
+    theme_bw() +
+    facet_wrap(. ~ true_temp) + 
+    labs(title = "Prior Posterior update: Temperature parameter",
+         caption = "Prior (blue) and posterior (red)") + 
+    xlab("Temperature")
+```
+```{r}
+ggplot(data = recovery_df) +
+    geom_density(
+        aes(
+            x = temp,
+            fill = as.character(true_alpha)
+        ),
+        alpha = .5
+    ) +
+    geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
+    theme_bw() +
+    facet_wrap(. ~ true_temp) + 
+    labs(title = "Posterior update: Temperature parameter",
+         fill = "Alpha parameter") + 
+    xlab("Temperature")
+```
