@@ -8,7 +8,7 @@
 │   └── AlienData.csv   <- csv-file with empirical data
 ````
 
-### Alien data
+## Alien data
 Data collected in experiment where participants categorized Aliens as dangerous/not-dangerous and notrious/non-notriuous in a 2x2 design. Participants did so either individually or in pairs (Tylén, Fusaroli, Smith, & Arnoldi, 2020). 
 
 **Columns in data:**
@@ -29,12 +29,19 @@ Data collected in experiment where participants categorized Aliens as dangerous/
 - "motivation", "competence": participants rating their motivation and competence during the task
 - "communication", "complement": participants rating communication and complement if they were in pairs
 
-### Recovery
-Output of models in simulation conditions for model and parameter recovery.
+## Recovery
+Output of models in simulation conditions for model and parameter recovery. 
 
-**parameter_recovery_gcm_aliendata.csv**: Parameter recovery of the GCM model (``stan/gcm.stan``) using the aliendata as stimuli (i.e. 104 trials). Only using one participant. The categorization rule was manually specified as dangerous if (f1==1 and f2==1), thus, resembling a low complexity condition.
+### Parameter Recovery
+The models have been run on either simulated feautures that are binary or continuous between 0 and 1, or the emperical alien data. The categorization rules were manually specified so dangerous depended on the value of features 1 and 2 only, thus, resembling a low complexity condition.
 
-**parameter_recovery_RL_binarydata.csv**: Parameter recovery of the reinforcement learning model (``stan/reinforcement_learning_multidim.stan``) using simulated binary data. Only using one participant. Fitted to multiple number of observations (between 104-520 trials). The categorization rule was manually specified as dangerous if (f1==1 and f2==1), thus, resembling a low complexity condition.
+| file name | model | data | n observations | n participants |
+| --- | --- | --- | --- | --- | 
+| parameter_recovery_gcm_aliendata.csv | ``stan/gcm.stan`` | Alien data | 104 | 1 | 
+| parameter_recovery_gcm_binary208.csv | ``stan/gcm.stan`` | Binary data | 208 | 1 | 
+| parameter_recovery_gcm_continuous208.csv | ``stan/gcm.stan`` | Continuous data | 208 | 1 | 
+| parameter_recovery_rl_300.csv | ``stan/reinforcement_learning.stan`` | Binary data | 300 | 1 | 
 
-### References
+
+## References
 Tylén, K., Fusaroli, R., Smith, P., & Arnoldi, J. (2020, August). The social route to abstraction: interaction and diversity enhance performance and transfer in a rule-based categorization task.

@@ -61,7 +61,7 @@ recovery_df <- future_pmap_dfr(parameters,
 
 ```{r}
 # save df
-# write.csv(recovery_df, paste("../data/recovery/parameter_recovery_gcm", type, n_obs, ".csv", sep = ""))
+# write.csv(recovery_df, paste("../data/recovery/parameter_recovery_gcm_", type, n_obs, ".csv", sep = ""))
 ```
 
 ### inspection
