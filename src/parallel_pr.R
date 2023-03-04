@@ -3,29 +3,27 @@
 ## INPUT ARGUMENTS ##
 args <- commandArgs(trailingOnly = TRUE)
 
-if (length(args) != 2) {
+if (length(args) != 4) {
   stop("Input missing!", call. = FALSE)
 }
 
 # Get input arguments
-model_type <- args[1]
+model <- args[1]
 index <- as.integer(args[2])
 n_obs <- as.integer(args[3])
-feature_type <- as.integer(args[4])
+feature_type <- args[4]
 
 # Get a random seed
 seed <- sample(c(1:1000000), 1)
 set.seed(seed)
 
-print(paste(
-  "--------------",
-  "\nRunning", model, "with:",
-  "\n Index =", index,
-  "\n N observations = ", n_obs,
-  "\n Feature type =", feature_type,
-  "\n Seed =", seed,
-  "\n--------------"
-))
+print("--------------")
+print(paste("Running", model, "with:"))
+print(paste("Index =", index))
+print(paste("N observations = ", n_obs))
+print(paste("Feature type =", feature_type))
+print(paste("Seed =", seed))
+print("--------------")
 
 ## PACKAGES AND FUNCTIONS ##
 # libraries
@@ -42,6 +40,7 @@ source("../src/generative_models.r")
 source("../src/util.r")
 
 ## LOAD MODEL ##
+set_cmdstan_path('/work/MA_thesis/cmdstan-2.31.0')
 if (model == "gcm") {
   file <- file.path("../stan/gcm.stan")
 } else if (model == "rl") {
@@ -55,6 +54,9 @@ mod <- cmdstan_model(
 print("Done compiling!")
 
 ## RUN PARAMETER RECOVERY ##
+print("--------------")
+print("RUNNING PARAMETER RECOVERY")
+
 if (model == "gcm") {
   # parameters
   c_parameters <- seq(from = 0, to = 2, length.out = 6)
@@ -89,7 +91,7 @@ if (model == "rl") {
   for (alpha_pos in alpha_parameters) {
     for (alpha_neg in alpha_parameters) {
       for (temp in temp_parameters) {
-        tmp <- param_recov_gcm(
+        tmp <- param_recov_rl(
           n_obs = n_obs,
           n_features = 5,
           type = feature_type,
@@ -111,7 +113,7 @@ if (model == "rl") {
 
 
 ### SAVE RESULTS ##
-write.csv(recovery_df, paste(
+save_path <- paste(
   "../data/recovery/parameter_recovery_",
   model,
   "_",
@@ -121,4 +123,10 @@ write.csv(recovery_df, paste(
   index,
   ".csv",
   sep = ""
-))
+)
+write.csv(recovery_df, save_path)
+
+print("--------------")
+print(paste("Results saved in:", save_path))
+print("DONE")
+
