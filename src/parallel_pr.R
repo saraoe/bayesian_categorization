@@ -91,21 +91,30 @@ if (model == "rl") {
   for (alpha_pos in alpha_parameters) {
     for (alpha_neg in alpha_parameters) {
       for (temp in temp_parameters) {
-        tmp <- param_recov_rl(
-          n_obs = n_obs,
-          n_features = 5,
-          type = feature_type,
-          alpha_pos = alpha_pos,
-          alpha_neg = alpha_neg,
-          temp = temp,
-          seed = seed
+        # trycatch to continue if sampling fails
+        tryCatch(
+          {
+            tmp <- param_recov_rl(
+              n_obs = n_obs,
+              n_features = 5,
+              type = feature_type,
+              alpha_pos = alpha_pos,
+              alpha_neg = alpha_neg,
+              temp = temp,
+              seed = seed
+            )
+    
+            if (exists("recovery_df")) {
+              recovery_df <- rbind(recovery_df, tmp)
+            } else {
+              recovery_df <- tmp
+            }
+          },
+          error = function(e) {
+            print(e)
+            print("continuing")
+          }
         )
-
-        if (exists("recovery_df")) {
-          recovery_df <- rbind(recovery_df, tmp)
-        } else {
-          recovery_df <- tmp
-        }
       }
     }
   }
