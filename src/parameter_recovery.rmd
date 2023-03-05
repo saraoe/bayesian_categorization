@@ -241,6 +241,16 @@ recovery_df <- future_pmap_dfr(parameters,
 # write.csv(recovery_df, paste("../data/recovery/parameter_recovery_rl.csv", sep = ""))
 ```
 
+```{r}
+nobservations <- 312
+
+# read df
+recovery_df <- read_csv(
+  paste("../data/recovery/parameter_recovery_rl_binary",
+        nobservations, "_1.csv", sep="")
+)
+```
+
 ### inspection
 ```{r}
 recovery_df %>% group_by(true_alpha_neg) %>% 
