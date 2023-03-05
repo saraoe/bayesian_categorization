@@ -64,6 +64,17 @@ recovery_df <- future_pmap_dfr(parameters,
 # write.csv(recovery_df, paste("../data/recovery/parameter_recovery_gcm_", type, n_obs, ".csv", sep = ""))
 ```
 
+```{r}
+type <- "binary"
+nobservations <- 104
+
+# read df
+recovery_df <- read_csv(
+  paste("../data/recovery/parameter_recovery_gcm_",
+        type, nobservations, "_1.csv", sep="")
+)
+```
+
 ### inspection
 ```{r}
 ggplot(data = recovery_df) +
@@ -78,6 +89,7 @@ ggplot(data = recovery_df) +
 ```
 
 ```{r}
+w_parameters <- unique(recovery_df$w_parameter)
 filter_w_param <- w_parameters[1]
 
 recovery_df %>% filter(w_parameter == filter_w_param) %>% ggplot() +
@@ -106,9 +118,10 @@ recovery_df %>%
 ```{r}
 rm(weights_draws_df)
 
+c_parameters <- unique(recovery_df$c_parameter)
+
 for (c_param in c_parameters) {
   for (w_params in w_parameters){
-    print(w_params)
     tmp <- recovery_df %>%
       filter(c_parameter == c_param & w_parameter == w_params) %>%
       pivot_longer(
