@@ -65,14 +65,25 @@ recovery_df <- future_pmap_dfr(parameters,
 ```
 
 ```{r}
-type <- "binary"
-nobservations <- 104
+types <- c("binary")
+nobservations <- c(104)
 
+rm(recovery_df) # remove in case it is already defined
 # read df
-recovery_df <- read_csv(
-  paste("../data/recovery/parameter_recovery_gcm_",
-        type, nobservations, "_1.csv", sep="")
-)
+for (nobs in nobservations) {
+  for (type in types) {
+    tmp <- read_csv(
+      paste("data/recovery/parameter_recovery_gcm_",
+            type, nobs, "_1.csv", sep="")
+    )
+
+    if (exists("recovery_df")) {
+        recovery_df <- rbind(recovery_df, tmp)
+    } else {
+        recovery_df <- tmp
+    }
+  }
+}
 ```
 
 ### inspection
@@ -242,13 +253,22 @@ recovery_df <- future_pmap_dfr(parameters,
 ```
 
 ```{r}
-nobservations <- 312
+nobservations <- c(104, 312)
 
+rm(recovery_df) # remove in case it is already defined
 # read df
-recovery_df <- read_csv(
-  paste("../data/recovery/parameter_recovery_rl_binary",
-        nobservations, "_1.csv", sep="")
-)
+for (nobs in nobservations) {
+  tmp <- read_csv(
+    paste("data/recovery/parameter_recovery_rl_binary",
+          nobs, "_1.csv", sep="")
+  )
+
+  if (exists("recovery_df")) {
+    recovery_df <- rbind(recovery_df, tmp)
+} else {
+    recovery_df <- tmp
+}
+}
 ```
 
 ### inspection
@@ -391,7 +411,7 @@ ggplot(data = recovery_df) +
     geom_density(
         aes(
             x = temp,
-            fill = as.character(true_alpha_neg)
+            fill = as.character(nobservations)
         ),
         alpha = .5
     ) +
