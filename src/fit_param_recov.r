@@ -59,6 +59,7 @@ param_recov_gcm <- function(n_obs, n_features, type, w, c, seed = 101) {
   draws_df <- as_draws_df(samples$draws())
   draws_df$c_parameter <- c
   draws_df$w_parameter <- w
+  draws_df$nobservations <- n_obs
 
   return(draws_df)
 }
