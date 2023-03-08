@@ -7,6 +7,7 @@ pacman::p_load(
   tidyverse,
   cmdstanr,
   posterior,
+  patchwork,
   future,
   purrr,
   furrr
@@ -295,7 +296,7 @@ ggplot(data = recovery_df) +
 ```
 
 ```{r}
-recovery_df %>% group_by(true_alpha_pos) %>% 
+recovery_df %>% group_by(true_alpha_pos) %>%
   summarize(
    mean_alpha_pos = mean(alpha_pos),
    sd_alpha_pos = sd(alpha_pos),
@@ -314,6 +315,80 @@ ggplot(data = recovery_df) +
     labs(title = "Prior Posterior update: Alpha_positive",
          caption = "Prior (blue) and posterior (red)") + 
     xlab("Alpha_positive")
+```
+
+```{r}
+neg <- ggplot(data = recovery_df) +
+    geom_violin(
+      aes(x = as.factor(true_alpha_neg), y = alpha_neg),
+      fill = "red", alpha = 0.3
+      ) +
+    geom_boxplot(
+      aes(x = as.factor(true_alpha_neg), y = alpha_neg),
+      width = 0.1
+      ) +
+    geom_line(
+      aes(x = as.factor(true_alpha_neg), y = true_alpha_neg, group = 1),
+      linetype = "dashed"
+      ) +
+    theme_bw() +
+    xlab("True Alpha") + ylab("Alpha Negative")
+
+pos <- ggplot(data = recovery_df) +
+    geom_violin(
+      aes(x = as.factor(true_alpha_pos), y = alpha_pos),
+      fill = "red", alpha = 0.3
+      ) +
+    geom_boxplot(
+      aes(x = as.factor(true_alpha_pos), y = alpha_pos),
+      width = 0.1
+      ) +
+    geom_line(
+      aes(x = as.factor(true_alpha_pos), y = true_alpha_pos, group = 1),
+      linetype = "dashed"
+      ) +
+    theme_bw() +
+    xlab("True Alpha") + ylab("Alpha Postive")
+
+neg + pos +
+    plot_annotation(title = "Posterior Distributions of Alphas")
+```
+
+```{r}
+neg <- ggplot(data = recovery_df) +
+    geom_violin(
+      aes(x = as.factor(true_alpha_neg), y = alpha_neg),
+      fill = "red", alpha = 0.3
+      ) +
+    geom_boxplot(
+      aes(x = as.factor(true_alpha_neg), y = alpha_neg),
+      width = 0.1
+      ) +
+    geom_line(
+      aes(x = as.factor(true_alpha_neg), y = true_alpha_neg, group = 1),
+      linetype = "dashed"
+      ) +
+    theme_bw() + facet_wrap(. ~ true_temp) +
+    xlab("True Alpha") + ylab("Alpha Negative")
+
+pos <- ggplot(data = recovery_df) +
+    geom_violin(
+      aes(x = as.factor(true_alpha_pos), y = alpha_pos),
+      fill = "red", alpha = 0.3
+      ) +
+    geom_boxplot(
+      aes(x = as.factor(true_alpha_pos), y = alpha_pos),
+      width = 0.1
+      ) +
+    geom_line(
+      aes(x = as.factor(true_alpha_pos), y = true_alpha_pos, group = 1),
+      linetype = "dashed"
+      ) +
+    theme_bw() + facet_wrap(. ~ true_temp) +
+    xlab("True Alpha") + ylab("Alpha Postive")
+
+neg + pos + 
+    plot_annotation(title = "Posterior Distributions of alpha by temperature")
 ```
 
 ```{r}
@@ -419,6 +494,26 @@ ggplot(data = recovery_df) +
     theme_bw() +
     facet_wrap(. ~ true_temp) + 
     labs(title = "Posterior update: Temperature",
-         fill = "Alpha_negative") + 
+         fill = "Number of observations") + 
     xlab("Temperature")
+```
+
+```{r}
+ggplot(data = recovery_df) +
+    geom_violin(
+      aes(x = as.factor(true_temp), y = temp),
+      fill = "red", alpha = 0.3
+      ) +
+    geom_boxplot(
+      aes(x = as.factor(true_temp), y = temp),
+      width = 0.1
+      ) +
+    geom_line(
+      aes(x = as.factor(true_temp), y = true_temp, group = 1),
+      linetype = "dashed"
+      ) +
+    theme_bw() + facet_wrap(. ~ true_alpha_neg) +
+    xlab("True Temperature") + ylab("Temperature") +
+    labs(title = "Posterior distributions of Temperature by alpha negative")
+
 ```
