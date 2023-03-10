@@ -57,11 +57,32 @@ param_recov_gcm <- function(n_obs, n_features, type, w, c, seed = 101) {
   )
 
   draws_df <- as_draws_df(samples$draws())
-  draws_df$c_parameter <- c
-  draws_df$w_parameter <- w
-  draws_df$nobservations <- n_obs
 
-  return(draws_df)
+  # update name of weights
+  colnames(draws_df) <- ifelse(
+    grepl("[", colnames(draws_df), fixed = TRUE),
+    paste(str_extract(colnames(draws_df), "\\w+"), "_",
+      str_extract(colnames(draws_df), "\\d+"),
+      sep = ""
+    ),
+    colnames(draws_df)
+  )
+
+  relevant_cols <- c("c", "c_prior")
+  for (colname in colnames(draws_df)) {
+    if (grepl("w_", colname, fixed = TRUE)) {
+      relevant_cols <- c(relevant_cols, colname)
+    }
+  }
+
+  # make output df
+  out_df <- draws_df %>%
+    select(relevant_cols)
+  out_df$c_parameter <- c
+  out_df$w_parameter <- w
+  out_df$nobservations <- n_obs
+
+  return(out_df)
 }
 
 
@@ -117,15 +138,16 @@ param_recov_rl <- function(n_obs, n_features, type, alpha_pos, alpha_neg, temp, 
   )
 
   draws_df <- as_draws_df(samples$draws())
-  
-  out_df <- tibble(
-    alpha_neg = draws_df$alpha_neg,
-    alpha_pos = draws_df$alpha_pos,
-    alpha_neg_prior = draws_df$alpha_neg_prior,
-    alpha_pos_propr = draws_df$alpha_pos_prior,
-    temp = draws_df$temp,
-    temp_prior = draws_df$temp_prior
+
+  # make ouput df
+  relevant_cols <- c(
+    "alpha_neg", "alpha_neg_prior",
+    "alpha_pos", "alpha_pos_prior",
+    "temp", "temp_prior"
   )
+
+  out_df <- draws_df %>%
+    select(relevant_cols)
   out_df$true_alpha_pos <- alpha_pos
   out_df$true_alpha_neg <- alpha_neg
   out_df$nobservations <- n_obs
