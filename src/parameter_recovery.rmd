@@ -254,14 +254,14 @@ recovery_df <- future_pmap_dfr(parameters,
 ```
 
 ```{r}
-nobservations <- c(104, 312)
+nobservations <- c(104, 208, 312)
 
 rm(recovery_df) # remove in case it is already defined
 # read df
 for (nobs in nobservations) {
   tmp <- read_csv(
     paste("data/recovery/parameter_recovery_rl_binary",
-          nobs, "_1.csv", sep="")
+          nobs, "_2.csv", sep="")
   )
 
   if (exists("recovery_df")) {
@@ -274,7 +274,7 @@ for (nobs in nobservations) {
 
 ### inspection
 ```{r}
-recovery_df %>% group_by(true_alpha_neg) %>% 
+recovery_df %>% group_by(true_alpha_neg) %>%
   summarize(
    mean_alpha_neg = mean(alpha_neg),
    sd_alpha_neg = sd(alpha_neg),
