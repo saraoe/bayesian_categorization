@@ -117,10 +117,19 @@ param_recov_rl <- function(n_obs, n_features, type, alpha_pos, alpha_neg, temp, 
   )
 
   draws_df <- as_draws_df(samples$draws())
-  draws_df$true_alpha_pos <- alpha_pos
-  draws_df$true_alpha_neg <- alpha_neg
-  draws_df$nobservations <- n_obs
-  draws_df$true_temp <- temp
+  
+  out_df <- tibble(
+    alpha_neg = draws_df$alpha_neg,
+    alpha_pos = draws_df$alpha_pos,
+    alpha_neg_prior = draws_df$alpha_neg_prior,
+    alpha_pos_propr = draws_df$alpha_pos_prior,
+    temp = draws_df$temp,
+    temp_prior = draws_df$temp_prior
+  )
+  out_df$true_alpha_pos <- alpha_pos
+  out_df$true_alpha_neg <- alpha_neg
+  out_df$nobservations <- n_obs
+  out_df$true_temp <- temp
 
-  return(draws_df)
+  return(out_df)
 }
