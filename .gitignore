@@ -1,6 +1,7 @@
 data/AlienData.csv
 data_inspection.rmd
 data/recovery/*
+figs/*
 
 test_models/*
 stan/bias*

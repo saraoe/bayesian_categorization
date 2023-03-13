@@ -270,6 +270,13 @@ for (nobs in nobservations) {
     recovery_df <- tmp
 }
 }
+
+recovery_df <- recovery_df %>%
+    mutate(
+      true_alpha_pos_round = round(true_alpha_pos, 3),
+      true_alpha_neg_round = round(true_alpha_neg, 3),
+      true_temp_round = round(true_temp, 3)
+    )
 ```
 
 ### inspection
@@ -284,15 +291,18 @@ recovery_df %>% group_by(true_alpha_neg) %>%
 ```
 
 ```{r}
-ggplot(data = recovery_df) +
+p <- ggplot(data = recovery_df) +
     geom_density(aes(x = alpha_neg_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = alpha_neg), fill = "red", alpha = .5) +
     geom_vline(aes(xintercept = true_alpha_neg), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_alpha_neg) +
+    facet_wrap(. ~ true_alpha_neg_round) +
     labs(title = "Prior Posterior update: Alpha_negative",
-         caption = "Prior (blue) and posterior (red)") + 
+         caption = "Prior (blue) and posterior (red)") +
     xlab("Alpha_negative")
+
+p
+ggsave("figs/parameter_recovery/pos-prior-update-alpha-neg.png", p)
 ```
 
 ```{r}
@@ -306,29 +316,32 @@ recovery_df %>% group_by(true_alpha_pos) %>%
 ```
 
 ```{r}
-ggplot(data = recovery_df) +
+p <- ggplot(data = recovery_df) +
     geom_density(aes(x = alpha_pos_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = alpha_pos), fill = "red", alpha = .5) +
     geom_vline(aes(xintercept = true_alpha_pos), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_alpha_pos) + 
+    facet_wrap(. ~ true_alpha_pos_round) + 
     labs(title = "Prior Posterior update: Alpha_positive",
          caption = "Prior (blue) and posterior (red)") + 
     xlab("Alpha_positive")
+
+p
+ggsave("figs/parameter_recovery/pos-prior-update-alpha-pos.png", p)
 ```
 
 ```{r}
 neg <- ggplot(data = recovery_df) +
     geom_violin(
-      aes(x = as.factor(true_alpha_neg), y = alpha_neg),
+      aes(x = as.factor(true_alpha_neg_round), y = alpha_neg),
       fill = "red", alpha = 0.3
       ) +
     geom_boxplot(
-      aes(x = as.factor(true_alpha_neg), y = alpha_neg),
+      aes(x = as.factor(true_alpha_neg_round), y = alpha_neg),
       width = 0.1
       ) +
     geom_line(
-      aes(x = as.factor(true_alpha_neg), y = true_alpha_neg, group = 1),
+      aes(x = as.factor(true_alpha_neg_round), y = true_alpha_neg, group = 1),
       linetype = "dashed"
       ) +
     theme_bw() +
@@ -336,63 +349,71 @@ neg <- ggplot(data = recovery_df) +
 
 pos <- ggplot(data = recovery_df) +
     geom_violin(
-      aes(x = as.factor(true_alpha_pos), y = alpha_pos),
+      aes(x = as.factor(true_alpha_pos_round), y = alpha_pos),
       fill = "red", alpha = 0.3
       ) +
     geom_boxplot(
-      aes(x = as.factor(true_alpha_pos), y = alpha_pos),
+      aes(x = as.factor(true_alpha_pos_round), y = alpha_pos),
       width = 0.1
       ) +
     geom_line(
-      aes(x = as.factor(true_alpha_pos), y = true_alpha_pos, group = 1),
+      aes(x = as.factor(true_alpha_pos_round), y = true_alpha_pos, group = 1),
       linetype = "dashed"
       ) +
     theme_bw() +
     xlab("True Alpha") + ylab("Alpha Postive")
 
-neg + pos +
-    plot_annotation(title = "Posterior Distributions of Alphas")
+p <- neg + pos +
+      plot_annotation(title = "Posterior Distributions of Alphas")
+
+p
+ggsave("figs/parameter_recovery/pos-alphas.png", p,
+       width = 15, height = 10)
 ```
 
 ```{r}
 neg <- ggplot(data = recovery_df) +
     geom_violin(
-      aes(x = as.factor(true_alpha_neg), y = alpha_neg),
+      aes(x = as.factor(true_alpha_neg_round), y = alpha_neg),
       fill = "red", alpha = 0.3
       ) +
     geom_boxplot(
-      aes(x = as.factor(true_alpha_neg), y = alpha_neg),
+      aes(x = as.factor(true_alpha_neg_round), y = alpha_neg),
       width = 0.1
       ) +
     geom_line(
-      aes(x = as.factor(true_alpha_neg), y = true_alpha_neg, group = 1),
+      aes(x = as.factor(true_alpha_neg_round), y = true_alpha_neg, group = 1),
       linetype = "dashed"
       ) +
-    theme_bw() + facet_wrap(. ~ true_temp) +
+    theme_bw() + facet_wrap(. ~ true_temp_round) +
     xlab("True Alpha") + ylab("Alpha Negative")
 
 pos <- ggplot(data = recovery_df) +
     geom_violin(
-      aes(x = as.factor(true_alpha_pos), y = alpha_pos),
+      aes(x = as.factor(true_alpha_pos_round), y = alpha_pos),
       fill = "red", alpha = 0.3
       ) +
     geom_boxplot(
-      aes(x = as.factor(true_alpha_pos), y = alpha_pos),
+      aes(x = as.factor(true_alpha_pos_round), y = alpha_pos),
       width = 0.1
       ) +
     geom_line(
-      aes(x = as.factor(true_alpha_pos), y = true_alpha_pos, group = 1),
+      aes(x = as.factor(true_alpha_pos_round), y = true_alpha_pos, group = 1),
       linetype = "dashed"
       ) +
-    theme_bw() + facet_wrap(. ~ true_temp) +
+    theme_bw() + facet_wrap(. ~ true_temp_round) +
     xlab("True Alpha") + ylab("Alpha Postive")
 
-neg + pos + 
-    plot_annotation(title = "Posterior Distributions of alpha by temperature")
+p <- neg + pos +
+    plot_annotation(title = "Posterior Distributions of Alphas by Temperature")
+
+p
+ggsave("figs/parameter_recovery/pos-alphas_by_temp.png", p,
+       width = 15, height = 10)
 ```
 
 ```{r}
-ggplot(data = recovery_df) +
+p <- ggplot(data = recovery_df) +
     geom_density(
         aes(
             x = alpha_neg,
@@ -402,14 +423,17 @@ ggplot(data = recovery_df) +
     ) +
     geom_vline(aes(xintercept = true_alpha_neg), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_alpha_neg) + 
+    facet_wrap(. ~ true_alpha_neg_round) +
     labs(title = "Posterior update: Alpha_negative",
-         fill = "Number of observations") + 
+         fill = "Number of observations") +
     xlab("Alpha_negative")
+
+p
+ggsave("figs/parameter_recovery/pos-alpha-neg_by_nobs.png", p)
 ```
 
 ```{r}
-ggplot(data = recovery_df) +
+p <- ggplot(data = recovery_df) +
     geom_density(
         aes(
             x = alpha_pos,
@@ -419,44 +443,53 @@ ggplot(data = recovery_df) +
     ) +
     geom_vline(aes(xintercept = true_alpha_pos), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_alpha_pos) + 
+    facet_wrap(. ~ true_alpha_pos_round) +
     labs(title = "Posterior update: Alpha_positive",
-         color = "Number of observations") + 
+         fill = "Number of observations") +
     xlab("Alpha_positive")
+
+p
+ggsave("figs/parameter_recovery/pos-alpha-pos_by_nobs.png", p)
 ```
 
 ```{r}
-ggplot(data = recovery_df) +
+p <- ggplot(data = recovery_df) +
     geom_density(
         aes(
             x = alpha_neg,
-            fill = as.character(true_temp)
+            fill = as.factor(true_temp_round)
         ),
         alpha = .5
     ) +
     geom_vline(aes(xintercept = true_alpha_neg), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_alpha_neg) + 
+    facet_wrap(. ~ true_alpha_neg_round) +
     labs(title = "Posterior update: Alpha_negative",
-         fill = "Temperature") + 
+         fill = "Temperature") +
     xlab("Alpha_negative")
+
+p
+ggsave("figs/parameter_recovery/pos-alpha-neg_by_temp.png", p)
 ```
 
 ```{r}
-ggplot(data = recovery_df) +
+p <- ggplot(data = recovery_df) +
     geom_density(
         aes(
             x = alpha_pos,
-            fill = as.character(true_temp)
+            fill = as.factor(true_temp_round)
         ),
         alpha = .5
     ) +
     geom_vline(aes(xintercept = true_alpha_pos), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_alpha_pos) + 
+    facet_wrap(. ~ true_alpha_pos_round) +
     labs(title = "Posterior update: Alpha_positive",
-         fill = "Temperature") + 
+         fill = "Temperature") +
     xlab("Alpha_positive")
+
+p
+ggsave("figs/parameter_recovery/pos-alpha-pos_by_temp.png", p)
 ```
 
 ```{r}
@@ -470,19 +503,22 @@ recovery_df %>% group_by(true_temp) %>%
 ```
 
 ```{r}
-ggplot(data = recovery_df) +
+p <- ggplot(data = recovery_df) +
     geom_density(aes(x = temp_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = temp), fill = "red", alpha = .5) +
     geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_temp) + 
+    facet_wrap(. ~ true_temp_round) +
     labs(title = "Prior Posterior update: Temperature",
-         caption = "Prior (blue) and posterior (red)") + 
+         caption = "Prior (blue) and posterior (red)") +
     xlab("Temperature")
+
+p
+ggsave("figs/parameter_recovery/pos-prior-update-temp.png", p)
 ```
 
 ```{r}
-ggplot(data = recovery_df) +
+p <- ggplot(data = recovery_df) +
     geom_density(
         aes(
             x = temp,
@@ -492,28 +528,56 @@ ggplot(data = recovery_df) +
     ) +
     geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ true_temp) + 
+    facet_wrap(. ~ true_temp_round) +
     labs(title = "Posterior update: Temperature",
-         fill = "Number of observations") + 
+         fill = "Number of observations") +
     xlab("Temperature")
+
+p
+ggsave("figs/parameter_recovery/pos-temp_by_nobs.png", p)
 ```
 
 ```{r}
-ggplot(data = recovery_df) +
+p <- ggplot(data = recovery_df) +
     geom_violin(
-      aes(x = as.factor(true_temp), y = temp),
+      aes(x = as.factor(true_temp_round), y = temp),
       fill = "red", alpha = 0.3
       ) +
     geom_boxplot(
-      aes(x = as.factor(true_temp), y = temp),
+      aes(x = as.factor(true_temp_round), y = temp),
       width = 0.1
       ) +
     geom_line(
-      aes(x = as.factor(true_temp), y = true_temp, group = 1),
+      aes(x = as.factor(true_temp_round), y = true_temp, group = 1),
       linetype = "dashed"
       ) +
-    theme_bw() + facet_wrap(. ~ true_alpha_neg) +
+    theme_bw() +
     xlab("True Temperature") + ylab("Temperature") +
-    labs(title = "Posterior distributions of Temperature by alpha negative")
+    labs(title = "Posterior Distributions of Temperature")
 
+p
+ggsave("figs/parameter_recovery/pos-temp.png", p)
+```
+
+```{r}
+p <- ggplot(data = recovery_df) +
+    geom_violin(
+      aes(x = as.factor(true_temp_round), y = temp),
+      fill = "red", alpha = 0.3
+      ) +
+    geom_boxplot(
+      aes(x = as.factor(true_temp_round), y = temp),
+      width = 0.1
+      ) +
+    geom_line(
+      aes(x = as.factor(true_temp_round), y = true_temp, group = 1),
+      linetype = "dashed"
+      ) +
+    theme_bw() + facet_wrap(. ~ true_alpha_neg_round) +
+    xlab("True Temperature") + ylab("Temperature") +
+    labs(title = "Posterior Distributions of Temperature by Alpha negative")
+
+p
+ggsave("figs/parameter_recovery/pos-temp_by_alpha_neg.png", p,
+       width = 10, height = 10)
 ```
