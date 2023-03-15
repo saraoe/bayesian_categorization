@@ -19,7 +19,8 @@ df <- read_csv("data/AlienData.csv") %>%
         f3 = as.numeric(substr(stimulus, 3, 3)),
         f4 = as.numeric(substr(stimulus, 4, 4)),
         f5 = as.numeric(substr(stimulus, 5, 5)),
-        danger_response = ifelse(response == 1 | response == 2, 1, 0)
+        danger_response = ifelse(response == 3 | response == 4, 1, 0),
+        nutri_response = ifelse(response == 2 | response == 4, 1, 0)
     ) %>%
     filter( # include only conditions with individuals and low complexity session
         condition == 1 & session == 1 & subject == 1
