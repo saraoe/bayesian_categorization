@@ -4,11 +4,11 @@ data/recovery/*
 figs/*
 
 test_models/*
-stan/bias*
-stan/gcm_onedim*
-stan/reinforcement_learning_onedim*
+src/stan/bias*
+src/stan/gcm_onedim*
+src/stan/reinforcement_learning_onedim*
 
-stan/*.exe
+src/stan/*.exe
 .Rproj.user
 GCM_thesis.Rproj
 .Rhistory

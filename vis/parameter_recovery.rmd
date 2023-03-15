@@ -5,66 +5,12 @@
 library(pacman)
 pacman::p_load(
   tidyverse,
-  cmdstanr,
-  posterior,
   patchwork,
-  future,
-  purrr,
-  furrr
 )
-
-source("../src/fit_param_recov.r")
-source("../src/generative_models.r")
-source("../src/util.r")
 ```
 
 ## GCM
-```{r}
-# load model
-# set_cmdstan_path('/work/MA_thesis/cmdstan-2.31.0')
-file <- file.path("../stan/gcm.stan")
-
-mod <- cmdstan_model(
-  file,
-  cpp_options = list(stan_threads = TRUE),
-  # stanc_options = list("O1")
-)
-print("Done compiling!")
-```
-
-### Simulate and run model
-```{r}
-# multi cores
-plan(multisession, workers = 4)
-
-# parameters for observations
-n_obs <- 208
-n_features <- 5
-type <- "continuous"
-
-# model parameters
-c_parameters <- seq(from = 0, to = 2, length.out = 6)
-w_parameters <- c("1,0,0,0,0", "0.2,0.2,0.2,0.2,0.2")
-
-# run model
-parameters <- tibble(expand_grid(n_obs = n_obs,
-                                 n_features = n_features,
-                                 type = type,
-                                 c = c_parameters,
-                                 w = w_parameters)
-               ) 
-
-recovery_df <- future_pmap_dfr(parameters, 
-                               param_recov_gcm, 
-                               .options = furrr_options(seed = TRUE)
-                               )
-```
-
-```{r}
-# save df
-# write.csv(recovery_df, paste("../data/recovery/parameter_recovery_gcm_", type, n_obs, ".csv", sep = ""))
-```
-
+### load data
 ```{r}
 types <- c("binary")
 nobservations <- c(104)
@@ -207,52 +153,7 @@ weights_draws_df %>% filter(w_param_cond == filter_w_param) %>%
 ```
 
 ## Reinforcement Learning
-```{r}
-# load model
-# set_cmdstan_path('/work/MA_thesis/cmdstan-2.31.0')
-file <- file.path("../stan/reinforcement_learning.stan")
-
-mod <- cmdstan_model(
-  file,
-  cpp_options = list(stan_threads = TRUE),
-  # stanc_options = list("O1")
-)
-print("Done compiling!")
-```
-
-### Simulate and run model
-```{r}
-# multi cores
-plan(multisession, workers = 4)
-
-# parameters for observations
-n_obs <- seq(from = 104, to = 104 * 3, length.out = 3)
-n_features <- 5
-
-# model parameters
-alpha_parameters <- seq(from = 0, to = 1, length.out = 4)
-temp_parameters <- seq(from = 0, to = 10, length.out = 4)
-
-# run model
-parameters <- tibble(expand_grid(n_obs = n_obs,
-                                 n_features = n_features,
-                                 type = "binary",  # only works with binary features
-                                 alpha_pos = alpha_parameters,
-                                 alpha_neg = alpha_parameters,
-                                 temp = temp_parameters)
-               ) 
-
-recovery_df <- future_pmap_dfr(parameters, 
-                               param_recov_rl, 
-                               .options = furrr_options(seed = TRUE)
-                               )
-```
-
-```{r}
-# save df
-# write.csv(recovery_df, paste("../data/recovery/parameter_recovery_rl.csv", sep = ""))
-```
-
+### load data
 ```{r}
 nobservations <- c(104, 208, 312)
 

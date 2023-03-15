@@ -34,9 +34,9 @@ observations <- df %>%
 
 # load model
 if (model == "gcm") {
-    file <- file.path("stan/gcm.stan")
+    file <- file.path("src/stan/gcm.stan")
 } else if (model == "rl") {
-    file <- file.path("stan/reinforcement_learning.stan")
+    file <- file.path("src/stan/reinforcement_learning.stan")
 }
 mod <- cmdstan_model(
     file,

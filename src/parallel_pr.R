@@ -40,11 +40,11 @@ source("../src/generative_models.r")
 source("../src/util.r")
 
 ## LOAD MODEL ##
-set_cmdstan_path('/work/MA_thesis/cmdstan-2.31.0')
+set_cmdstan_path("/work/MA_thesis/cmdstan-2.31.0")
 if (model == "gcm") {
-  file <- file.path("../stan/gcm.stan")
+  file <- file.path("stan/gcm.stan")
 } else if (model == "rl") {
-  file <- file.path("../stan/reinforcement_learning.stan")
+  file <- file.path("stan/reinforcement_learning.stan")
 }
 mod <- cmdstan_model(
   file,
@@ -103,7 +103,7 @@ if (model == "rl") {
               temp = temp,
               seed = seed
             )
-    
+
             if (exists("recovery_df")) {
               recovery_df <- rbind(recovery_df, tmp)
             } else {
@@ -138,4 +138,3 @@ write.csv(recovery_df, save_path)
 print("--------------")
 print(paste("Results saved in:", save_path))
 print("DONE")
-
