@@ -1,0 +1,1 @@
+Rscript fit_model.R rl &> ../logs/fit_rl &

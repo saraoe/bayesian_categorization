@@ -48,17 +48,17 @@ Chains
 ```{r}
 p1 <- ggplot(draws_df) +
   geom_line(aes(.iteration, temp, group = .chain, color = .chain)) +
-  theme_bw() +
+  theme_bw() + facet_wrap(. ~subject) +
   labs(y = "Temperature")
 
 p2 <- ggplot(draws_df) +
   geom_line(aes(.iteration, alpha_neg, group = .chain, color = .chain)) +
-  theme_bw() +
+  theme_bw() + facet_wrap(. ~subject) +
   labs(y = "Alpha Negative")
 
 p3 <- ggplot(draws_df) +
   geom_line(aes(.iteration, alpha_pos, group = .chain, color = .chain)) +
-  theme_bw() +
+  theme_bw() + facet_wrap(. ~subject) +
   labs(y = "Alpha Positive")
 
 p1 / p2 / p3 +
