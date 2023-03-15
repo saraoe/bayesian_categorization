@@ -5,12 +5,36 @@ The ability to form categories is essential for understanding external input and
 ## Project Organization
 
 ````
-├── README.md       <- The top-level README for this project.
-├── data 
-│   └── ...         <-                      
-├── stan 
-│   └── ...         <- stan scripts
+├── README.md           <- The top-level README for this project.
+├── logs
+├── data                <- emprical data, samples, and parameter recovery                     
 ├── src 
-│   ├── parameter_recovery
+│   ├── stan            <- stan scripts
+│   ├── parallel_pr.sh  <- parameter recovery
+│   ├── fit_models.sh   <- fit models to data
 │   └── ... 
+├── vis                 <- rmd-files for visualizations
+├── figs                <- figures
 ````
+
+## Reproduce results
+Firstly, clone the repository
+````
+git clone https://github.com/saraoe/bayesian_categorization.git
+````
+````
+cd bayesian_categorization
+````
+*NB: Then make a folder in ``bayesian_categorization/`` called ``logs`` before running the bash scripts*
+
+To reproduce parameter recovery run
+```` 
+bash src/parallel_pr.sh
+````
+*The working directory must be set to ``bayesian_categorization/src/``*
+
+To reproduce sampling using empirical data run
+```` 
+bash src/fit_models.sh
+````
+*The working directory must be set to ``bayesian_categorization/``*
