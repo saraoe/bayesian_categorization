@@ -1,0 +1,259 @@
+# Model fit
+```{r}
+# libraries
+library(pacman)
+pacman::p_load(
+  tidyverse,
+  patchwork
+)
+```
+
+## GCM
+
+## Reinforcement Learning
+### load data
+```{r}
+alien_data <- read_csv("data/AlienData.csv")
+draws_df <- read_csv("data/rl_samples.csv")
+
+# update colnames
+new_colnames <- c()
+for (colname in colnames(draws_df)) {
+    if (grepl("values_prior", colname, fixed = TRUE)) {  # specific case
+        new_colname <- paste("values_prior_",
+          str_extract_all(colname, "\\d+")[[1]][1], "_",
+          str_extract_all(colname, "\\d+")[[1]][2], sep = "")
+        new_colnames <- c(new_colnames, new_colname)
+
+    } else if (grepl(",", colname, fixed = TRUE)) {     # matrix
+        new_colname <- paste(str_extract(colname, "\\w+"), "_",
+          str_extract_all(colname, "\\d+")[[1]][1], "_",
+          str_extract_all(colname, "\\d+")[[1]][2], sep = "")
+        new_colnames <- c(new_colnames, new_colname)
+
+    } else if (grepl("[", colname, fixed = TRUE)) {     # array
+        new_colname <- paste(str_extract(colname, "\\w+"), "_",
+          str_extract(colname, "\\d+"), sep = "")
+        new_colnames <- c(new_colnames, new_colname)
+
+    } else {
+        new_colnames <- c(new_colnames, colname)
+    }
+}
+colnames(draws_df) <- new_colnames
+```
+
+### inspection
+Chains
+```{r}
+p1 <- ggplot(draws_df) +
+  geom_line(aes(.iteration, temp, group = .chain, color = .chain)) +
+  theme_bw() +
+  labs(y = "Temperature")
+
+p2 <- ggplot(draws_df) +
+  geom_line(aes(.iteration, alpha_neg, group = .chain, color = .chain)) +
+  theme_bw() +
+  labs(y = "Alpha Negative")
+
+p3 <- ggplot(draws_df) +
+  geom_line(aes(.iteration, alpha_pos, group = .chain, color = .chain)) +
+  theme_bw() +
+  labs(y = "Alpha Positive")
+
+p1 / p2 / p3 +
+      plot_annotation(title = "Chain iterations")
+
+```
+
+Prior predictive checks
+```{r}
+lower_idx <- match("priorpred_1", colnames(draws_df))
+upper_idx <- match(paste("priorpred_", 104, sep = ""), colnames(draws_df))
+priorpreds_draws_df <- draws_df %>%
+    pivot_longer(
+        c(lower_idx:upper_idx),
+        names_to = "trial", values_to = "priorpreds"
+    ) %>%
+    mutate(
+        trial_number = as.factor(str_extract(trial, "\\d+")),
+        priorpreds = as.factor(priorpreds)
+    ) %>%
+    select(c(trial, trial_number, priorpreds))
+```
+
+```{r}
+priorpreds_draws_df %>%
+    mutate(
+        priorpreds = as.numeric(priorpreds) - 1,
+    ) %>%
+    summarize(
+        danger_response = sum(priorpreds) / n()
+    )
+```
+
+```{r}
+ggplot(data = priorpreds_draws_df) +
+    geom_histogram(
+        aes(x = priorpreds),
+        stat = "count"
+    ) +
+    theme_bw()
+```
+
+```{r}
+lower_idx <- match("theta_prior_1", colnames(draws_df))
+upper_idx <- match(paste("theta_prior_", 104, sep = ""), colnames(draws_df))
+theta_prior_draws_df <- draws_df %>%
+    pivot_longer(
+        c(lower_idx:upper_idx),
+        names_to = "trial", values_to = "theta_prior"
+    ) %>%
+    mutate(
+        trial_number = as.factor(str_extract(trial, "\\d+"))
+    ) %>%
+    select(c(trial, trial_number, theta_prior))
+```
+
+```{r}
+ggplot(data = theta_prior_draws_df) +
+    geom_density(
+        aes(
+            x = theta_prior,
+            group = as.numeric(trial_number),
+            fill = as.numeric(trial_number)
+        ),
+        alpha = .5
+    ) +
+    theme_bw()
+```
+
+Posterior predictive checks
+```{r}
+lower_idx <- match("posteriorpred_1", colnames(draws_df))
+upper_idx <- match(paste("posteriorpred_", 104, sep = ""), colnames(draws_df))
+posteriorpreds_draws_df <- draws_df %>%
+    pivot_longer(
+        c(lower_idx:upper_idx),
+        names_to = "trial", values_to = "posteriorpreds"
+    ) %>%
+    mutate(
+        trial_number = as.factor(str_extract(trial, "\\d+")),
+        posteriorpreds = as.factor(posteriorpreds)
+    ) %>%
+    select(c(trial, trial_number, posteriorpreds))
+```
+
+```{r}
+posteriorpreds_draws_df %>%
+    mutate(
+        posteriorpreds = as.numeric(posteriorpreds) - 1,
+    ) %>%
+    summarize(
+        danger_response = sum(posteriorpreds) / n()
+    )
+```
+
+```{r}
+ggplot(data = posteriorpreds_draws_df) +
+    geom_histogram(
+        aes(x = posteriorpreds),
+        stat = "count"
+    ) +
+    theme_bw()
+```
+
+```{r}
+lower_idx <- match("theta_1", colnames(draws_df))
+upper_idx <- match(paste("theta_", 104, sep = ""), colnames(draws_df))
+theta_draws_df <- draws_df %>%
+    pivot_longer(
+        c(lower_idx:upper_idx),
+        names_to = "trial", values_to = "theta"
+    ) %>%
+    mutate(
+        trial_number = as.factor(str_extract(trial, "\\d+"))
+    ) %>%
+    select(c(trial, trial_number, theta))
+```
+
+```{r}
+ggplot(data = theta_draws_df) +
+    geom_density(
+        aes(
+            x = theta,
+            group = as.numeric(trial_number),
+            fill = as.numeric(trial_number)
+        ),
+        alpha = .5
+    ) +
+    theme_bw()
+```
+
+Alpha parameters
+```{r}
+draws_df %>%
+  summarize(
+   mean_alpha_neg = mean(alpha_neg),
+   sd_alpha_neg = sd(alpha_neg),
+   mean_alpha_neg_prior = mean(alpha_neg_prior),
+   sd_alpha_neg_prior = sd(alpha_neg_prior)
+  )
+```
+
+```{r}
+p <- ggplot(data = draws_df) +
+    geom_density(aes(x = alpha_neg_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = alpha_neg), fill = "red", alpha = .5) +
+    theme_bw() +
+    labs(title = "Prior Posterior update: Alpha_negative",
+         caption = "Prior (blue) and posterior (red)") +
+    xlab("Alpha_negative")
+
+p
+```
+
+```{r}
+draws_df %>%
+  summarize(
+   mean_alpha_pos = mean(alpha_pos),
+   sd_alpha_pos = sd(alpha_pos),
+   mean_alpha_pos_prior = mean(alpha_pos_prior),
+   sd_alpha_pos_prior = sd(alpha_pos_prior)
+  )
+```
+
+```{r}
+p <- ggplot(data = draws_df) +
+    geom_density(aes(x = alpha_pos_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = alpha_pos), fill = "red", alpha = .5) +
+    theme_bw() +
+    labs(title = "Prior Posterior update: Alpha_positive",
+         caption = "Prior (blue) and posterior (red)") +
+    xlab("Alpha_positive")
+
+p
+```
+
+Temperature
+```{r}
+draws_df %>%
+  summarize(
+   mean_temp = mean(temp),
+   sd_temp = sd(temp),
+   mean_temp_prior = mean(temp_prior),
+   sd_temp_prior = sd(temp_prior)
+  )
+```
+
+```{r}
+p <- ggplot(data = draws_df) +
+    geom_density(aes(x = temp_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = temp), fill = "red", alpha = .5) +
+    theme_bw() +
+    labs(title = "Prior Posterior update: Temperature",
+         caption = "Prior (blue) and posterior (red)") +
+    xlab("Temperature")
+
+p
+```
