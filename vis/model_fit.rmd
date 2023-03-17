@@ -3,8 +3,8 @@
 # libraries
 library(pacman)
 pacman::p_load(
-  tidyverse,
-  patchwork
+    tidyverse,
+    patchwork
 )
 ```
 
@@ -19,23 +19,26 @@ draws_df <- read_csv("data/rl_samples.csv")
 # update colnames
 new_colnames <- c()
 for (colname in colnames(draws_df)) {
-    if (grepl("values_prior", colname, fixed = TRUE)) {  # specific case
+    if (grepl("values_prior", colname, fixed = TRUE)) { # specific case
         new_colname <- paste("values_prior_",
-          str_extract_all(colname, "\\d+")[[1]][1], "_",
-          str_extract_all(colname, "\\d+")[[1]][2], sep = "")
+            str_extract_all(colname, "\\d+")[[1]][1], "_",
+            str_extract_all(colname, "\\d+")[[1]][2],
+            sep = ""
+        )
         new_colnames <- c(new_colnames, new_colname)
-
-    } else if (grepl(",", colname, fixed = TRUE)) {     # matrix
+    } else if (grepl(",", colname, fixed = TRUE)) { # matrix
         new_colname <- paste(str_extract(colname, "\\w+"), "_",
-          str_extract_all(colname, "\\d+")[[1]][1], "_",
-          str_extract_all(colname, "\\d+")[[1]][2], sep = "")
+            str_extract_all(colname, "\\d+")[[1]][1], "_",
+            str_extract_all(colname, "\\d+")[[1]][2],
+            sep = ""
+        )
         new_colnames <- c(new_colnames, new_colname)
-
-    } else if (grepl("[", colname, fixed = TRUE)) {     # array
+    } else if (grepl("[", colname, fixed = TRUE)) { # array
         new_colname <- paste(str_extract(colname, "\\w+"), "_",
-          str_extract(colname, "\\d+"), sep = "")
+            str_extract(colname, "\\d+"),
+            sep = ""
+        )
         new_colnames <- c(new_colnames, new_colname)
-
     } else {
         new_colnames <- c(new_colnames, colname)
     }
@@ -47,23 +50,25 @@ colnames(draws_df) <- new_colnames
 Chains
 ```{r}
 p1 <- ggplot(draws_df) +
-  geom_line(aes(.iteration, temp, group = .chain, color = .chain)) +
-  theme_bw() + facet_wrap(. ~subject) +
-  labs(y = "Temperature")
+    geom_line(aes(.iteration, temp, group = .chain, color = .chain)) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
+    labs(y = "Temperature")
 
 p2 <- ggplot(draws_df) +
-  geom_line(aes(.iteration, alpha_neg, group = .chain, color = .chain)) +
-  theme_bw() + facet_wrap(. ~subject) +
-  labs(y = "Alpha Negative")
+    geom_line(aes(.iteration, alpha_neg, group = .chain, color = .chain)) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
+    labs(y = "Alpha Negative")
 
 p3 <- ggplot(draws_df) +
-  geom_line(aes(.iteration, alpha_pos, group = .chain, color = .chain)) +
-  theme_bw() + facet_wrap(. ~subject) +
-  labs(y = "Alpha Positive")
+    geom_line(aes(.iteration, alpha_pos, group = .chain, color = .chain)) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
+    labs(y = "Alpha Positive")
 
 p1 / p2 / p3 +
-      plot_annotation(title = "Chain iterations")
-
+    plot_annotation(title = "Chain iterations")
 ```
 
 Prior predictive checks
@@ -190,15 +195,54 @@ ggplot(data = theta_draws_df) +
     theme_bw()
 ```
 
+Theta
+```{r}
+p1 <- ggplot(data = draws_df) +
+    geom_density(
+        aes(x = theta_prior_2),
+        fill = "purple", alpha = .5
+    ) +
+    geom_density(
+        aes(x = theta_prior_52),
+        fill = "yellow", alpha = .5
+    ) +
+    geom_density(
+        aes(x = theta_prior_104),
+        fill = "red", alpha = .5
+    ) +
+    facet_wrap(. ~ subject) +
+    theme_bw() +
+    ylim(0, 30)
+
+p2 <- ggplot(data = draws_df) +
+    geom_density(
+        aes(x = theta_2),
+        fill = "purple", alpha = .5
+    ) +
+    geom_density(
+        aes(x = theta_52),
+        fill = "yellow", alpha = .5
+    ) +
+    geom_density(
+        aes(x = theta_104),
+        fill = "red", alpha = .5
+    ) +
+    facet_wrap(. ~ subject) +
+    theme_bw() +
+    ylim(0, 30)
+
+p1 + p2
+```
+
 Alpha parameters
 ```{r}
 draws_df %>%
-  summarize(
-   mean_alpha_neg = mean(alpha_neg),
-   sd_alpha_neg = sd(alpha_neg),
-   mean_alpha_neg_prior = mean(alpha_neg_prior),
-   sd_alpha_neg_prior = sd(alpha_neg_prior)
-  )
+    summarize(
+        mean_alpha_neg = mean(alpha_neg),
+        sd_alpha_neg = sd(alpha_neg),
+        mean_alpha_neg_prior = mean(alpha_neg_prior),
+        sd_alpha_neg_prior = sd(alpha_neg_prior)
+    )
 ```
 
 ```{r}
@@ -206,8 +250,11 @@ p <- ggplot(data = draws_df) +
     geom_density(aes(x = alpha_neg_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = alpha_neg), fill = "red", alpha = .5) +
     theme_bw() +
-    labs(title = "Prior Posterior update: Alpha_negative",
-         caption = "Prior (blue) and posterior (red)") +
+    facet_wrap(. ~ subject) +
+    labs(
+        title = "Prior Posterior update: Alpha_negative",
+        caption = "Prior (blue) and posterior (red)"
+    ) +
     xlab("Alpha_negative")
 
 p
@@ -215,12 +262,12 @@ p
 
 ```{r}
 draws_df %>%
-  summarize(
-   mean_alpha_pos = mean(alpha_pos),
-   sd_alpha_pos = sd(alpha_pos),
-   mean_alpha_pos_prior = mean(alpha_pos_prior),
-   sd_alpha_pos_prior = sd(alpha_pos_prior)
-  )
+    summarize(
+        mean_alpha_pos = mean(alpha_pos),
+        sd_alpha_pos = sd(alpha_pos),
+        mean_alpha_pos_prior = mean(alpha_pos_prior),
+        sd_alpha_pos_prior = sd(alpha_pos_prior)
+    )
 ```
 
 ```{r}
@@ -228,8 +275,11 @@ p <- ggplot(data = draws_df) +
     geom_density(aes(x = alpha_pos_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = alpha_pos), fill = "red", alpha = .5) +
     theme_bw() +
-    labs(title = "Prior Posterior update: Alpha_positive",
-         caption = "Prior (blue) and posterior (red)") +
+    facet_wrap(. ~ subject) +
+    labs(
+        title = "Prior Posterior update: Alpha_positive",
+        caption = "Prior (blue) and posterior (red)"
+    ) +
     xlab("Alpha_positive")
 
 p
@@ -238,12 +288,12 @@ p
 Temperature
 ```{r}
 draws_df %>%
-  summarize(
-   mean_temp = mean(temp),
-   sd_temp = sd(temp),
-   mean_temp_prior = mean(temp_prior),
-   sd_temp_prior = sd(temp_prior)
-  )
+    summarize(
+        mean_temp = mean(temp),
+        sd_temp = sd(temp),
+        mean_temp_prior = mean(temp_prior),
+        sd_temp_prior = sd(temp_prior)
+    )
 ```
 
 ```{r}
@@ -251,9 +301,133 @@ p <- ggplot(data = draws_df) +
     geom_density(aes(x = temp_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = temp), fill = "red", alpha = .5) +
     theme_bw() +
-    labs(title = "Prior Posterior update: Temperature",
-         caption = "Prior (blue) and posterior (red)") +
+    facet_wrap(. ~ subject) +
+    labs(
+        title = "Prior Posterior update: Temperature",
+        caption = "Prior (blue) and posterior (red)"
+    ) +
     xlab("Temperature")
 
 p
+```
+
+Values
+```{r}
+draws_df %>%
+    summarize(
+        mean(values_1_1),
+        # sd(values_1_1),
+        mean(values_1_2),
+        # sd(values_1_2),
+        mean(values_1_3),
+        # sd(values_1_3),
+        mean(values_1_4),
+        # sd(values_1_4),
+        mean(values_1_5),
+        # sd(values_1_5)
+    )
+```
+
+```{r}
+p1 <- ggplot(data = draws_df) +
+    geom_density(
+        aes(x = values_prior_1_1),
+        fill = "blue", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_prior_1_2),
+        fill = "purple", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_prior_1_3),
+        fill = "red", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_prior_1_4),
+        fill = "yellow", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_prior_1_5),
+        fill = "green", alpha = .3
+    ) +
+    theme_bw() +
+    labs(x = "Value", title = "Prior Values")
+
+p2 <- ggplot(data = draws_df) +
+    geom_density(
+        aes(x = values_1_1),
+        fill = "blue", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_1_2),
+        fill = "purple", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_1_3),
+        fill = "red", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_1_4),
+        fill = "yellow", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_1_5),
+        fill = "green", alpha = .3
+    ) +
+    theme_bw() +
+    labs(x = "Value", title = "Posterior Values")
+
+p1 + p2
+```
+
+```{r}
+p1 <- ggplot(data = draws_df) +
+    geom_density(
+        aes(x = values_2_1),
+        fill = "blue", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_2_2),
+        fill = "purple", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_2_3),
+        fill = "red", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_2_4),
+        fill = "yellow", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_2_5),
+        fill = "green", alpha = .3
+    ) +
+    theme_bw() +
+    labs(x = "Value", title = "Values Non-Dangerous")
+
+p2 <- ggplot(data = draws_df) +
+    geom_density(
+        aes(x = values_1_1),
+        fill = "blue", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_1_2),
+        fill = "purple", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_1_3),
+        fill = "red", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_1_4),
+        fill = "yellow", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_1_5),
+        fill = "green", alpha = .3
+    ) +
+    theme_bw() +
+    labs(x = "Value", title = "Values Dangerous")
+
+p1 + p2
 ```
