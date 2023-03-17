@@ -1,6 +1,6 @@
 data/AlienData.csv
 data_inspection.rmd
-data/recovery/*
+data/*
 figs/*
 
 test_models/*
