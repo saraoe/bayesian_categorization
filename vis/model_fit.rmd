@@ -52,23 +52,48 @@ Chains
 p1 <- ggplot(draws_df) +
     geom_line(aes(.iteration, temp, group = .chain, color = .chain)) +
     theme_bw() +
-    facet_wrap(. ~ subject) +
     labs(y = "Temperature")
 
 p2 <- ggplot(draws_df) +
     geom_line(aes(.iteration, alpha_neg, group = .chain, color = .chain)) +
     theme_bw() +
-    facet_wrap(. ~ subject) +
     labs(y = "Alpha Negative")
 
 p3 <- ggplot(draws_df) +
     geom_line(aes(.iteration, alpha_pos, group = .chain, color = .chain)) +
     theme_bw() +
-    facet_wrap(. ~ subject) +
     labs(y = "Alpha Positive")
 
 p1 / p2 / p3 +
     plot_annotation(title = "Chain iterations")
+
+ggsave("figs/rl/chain_iterations.png")
+```
+
+```{r}
+ggplot(draws_df) +
+    geom_line(aes(.iteration, temp, group = .chain, color = .chain)) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
+    labs(y = "Temperature")
+
+ggsave("figs/rl/chain_iterations_temp.png")
+
+ggplot(draws_df) +
+    geom_line(aes(.iteration, alpha_neg, group = .chain, color = .chain)) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
+    labs(y = "Alpha Negative")
+
+ggsave("figs/rl/chain_iterations_alphaneg.png")
+
+ggplot(draws_df) +
+    geom_line(aes(.iteration, alpha_pos, group = .chain, color = .chain)) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
+    labs(y = "Alpha Positive")
+
+ggsave("figs/rl/chain_iterations_alphapos.png")
 ```
 
 Prior predictive checks
@@ -246,7 +271,7 @@ draws_df %>%
 ```
 
 ```{r}
-p <- ggplot(data = draws_df) +
+ggplot(data = draws_df) +
     geom_density(aes(x = alpha_neg_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = alpha_neg), fill = "red", alpha = .5) +
     theme_bw() +
@@ -257,7 +282,7 @@ p <- ggplot(data = draws_df) +
     ) +
     xlab("Alpha_negative")
 
-p
+ggsave("figs/rl/prior-pos-update-alphaneg.png")
 ```
 
 ```{r}
@@ -271,7 +296,7 @@ draws_df %>%
 ```
 
 ```{r}
-p <- ggplot(data = draws_df) +
+ggplot(data = draws_df) +
     geom_density(aes(x = alpha_pos_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = alpha_pos), fill = "red", alpha = .5) +
     theme_bw() +
@@ -282,7 +307,7 @@ p <- ggplot(data = draws_df) +
     ) +
     xlab("Alpha_positive")
 
-p
+ggsave("figs/rl/prior-pos-update-alphapos.png")
 ```
 
 Temperature
@@ -297,7 +322,7 @@ draws_df %>%
 ```
 
 ```{r}
-p <- ggplot(data = draws_df) +
+ggplot(data = draws_df) +
     geom_density(aes(x = temp_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = temp), fill = "red", alpha = .5) +
     theme_bw() +
@@ -308,7 +333,7 @@ p <- ggplot(data = draws_df) +
     ) +
     xlab("Temperature")
 
-p
+ggsave("figs/rl/prior-pos-update-temp.png")
 ```
 
 Values
