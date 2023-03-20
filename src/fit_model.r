@@ -69,8 +69,8 @@ for (sub in unique(df$subject)) {
         data <- list(
             ntrials = nrow(observations),
             nfeatures = ncol(observations),
-            cat_one = tmp$dangerous,
-            y = tmp$danger_response,
+            cat_one = tmp$nutricious,
+            y = tmp$nutri_response,
             obs = as.matrix(observations),
             alpha_neg_prior_values = c(0, 1),
             alpha_pos_prior_values = c(0, 1),
