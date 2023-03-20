@@ -31,10 +31,8 @@ To reproduce parameter recovery run
 ```` 
 bash src/parallel_pr.sh
 ````
-*The working directory must be set to ``bayesian_categorization/src/``*
 
 To reproduce sampling using empirical data run
 ```` 
 bash src/fit_models.sh
 ````
-*The working directory must be set to ``bayesian_categorization/``*

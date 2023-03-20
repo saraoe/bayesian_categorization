@@ -16,13 +16,13 @@ if (length(args) != 1) {
 }
 
 # Get input arguments
-model <- args[1] 
+model <- args[1]
 
 print(paste("Fitting", model))
 print("------------")
 
 # load data
-df <- read_csv("data/AlienData.csv") %>%
+df <- read_csv("../data/AlienData.csv") %>%
     mutate( # add feature values
         f1 = as.numeric(substr(stimulus, 1, 1)),
         f2 = as.numeric(substr(stimulus, 2, 2)),
@@ -40,9 +40,9 @@ df <- read_csv("data/AlienData.csv") %>%
 # load model
 print("Compiling model")
 if (model == "gcm") {
-    file <- file.path("src/stan/gcm.stan")
+    file <- file.path("../src/stan/gcm.stan")
 } else if (model == "rl") {
-    file <- file.path("src/stan/reinforcement_learning.stan")
+    file <- file.path("../src/stan/reinforcement_learning.stan")
 }
 mod <- cmdstan_model(
     file,
@@ -106,7 +106,7 @@ for (sub in unique(df$subject)) {
 print("------------")
 
 # write results
-out_path <- paste("data/", model, "_samples.csv", sep = "")
+out_path <- paste("../data/", model, "_samples.csv", sep = "")
 write.csv(output_df, out_path)
 print("output_df written to path:", out_path)
 print("DONE")

@@ -1,1 +1,1 @@
-Rscript fit_model.R rl &> ../logs/fit_rl &
+Rscript fit_model.R rl &> ../logs/fit_rl.log &
