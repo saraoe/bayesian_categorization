@@ -1,0 +1,68 @@
+# Visualizations for priors
+
+```{r}
+# libraries
+library(pacman)
+pacman::p_load(
+    tidyverse,
+    boot,
+    RColorBrewer
+)
+```
+
+## GCM
+
+c parameter
+```{r}
+grid <- 100
+ncs <- 11
+
+distances <- seq(from = 0, to = 5, length.out = grid)
+cs <- seq(from = 0, to = 5, length.out = ncs)
+
+tibble(
+    distance = rep(distances, each = ncs),
+    c = rep(cs, grid)
+) %>%
+    mutate(
+        similarity = exp(-c * distance)
+    ) %>%
+    ggplot() +
+    geom_line(aes(x = distance, y = similarity, color = as.factor(c))) +
+    theme_classic() +
+    scale_color_brewer(palette = "PuOr") +
+    labs(
+        color = "C parameter"
+    )
+
+ggsave("figs/gcm/prior_c.png", width = 10)
+```
+
+## Reinforcement learning
+
+Temperature
+```{r}
+grid <- 100
+ntemps <- 11
+
+values <- seq(from = -1, to = 1, length.out = grid)
+temperatures <- seq(from = 0, to = 20, length.out = ntemps)
+
+tibble(
+    value = rep(values, each = ntemps),
+    temperature = rep(temperatures, grid)
+) %>%
+    mutate(
+        temperature_f = as.factor(temperature),
+        probability = boot::inv.logit(temperature * value)
+    ) %>%
+    ggplot() +
+    geom_line(aes(x = value, y = probability, color = temperature_f)) +
+    theme_classic() +
+    scale_color_brewer(palette = "PuOr") +
+    labs(
+        color = "Temperature"
+    )
+
+ggsave("figs/rl/prior_temp.png", width = 10)
+```
