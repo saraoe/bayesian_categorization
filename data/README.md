@@ -5,7 +5,9 @@
 ├── data 
 │   ├── recovery        <- csv-files from model and parameter recovery
 │   │   └── ...
-│   └── AlienData.csv   <- csv-file with empirical data
+│   ├── AlienData.csv   <- empirical data
+│   ├── rl_samples.csv  <- samples from rl model fitted to AlienData
+│   └── gcm_samples.csv <- samples from gcm model fitted to AlienData
 ````
 
 ## Alien data
@@ -29,12 +31,20 @@ Data collected in experiment where participants categorized Aliens as dangerous/
 - "motivation", "competence": participants rating their motivation and competence during the task
 - "communication", "complement": participants rating communication and complement if they were in pairs
 
+## Samples
+The two files ``gcm_samples.csv`` and ``rl_samples.csv`` comes from the script ``src/fit_models.r`` and include the sampled values from fitting the two models to the emprical data. The models only uses one category, and it has been fitted to *nutricious* over *dangerous* as this category were more balanced in the empiracal data.
+
+*NB: right now we only have rl_samples with only data from session 1!*
+
 ## Recovery
 Output of models in simulation conditions for model and parameter recovery. 
 
 ### Parameter Recovery
-The models have been run on either simulated feautures that are binary or continuous between 0 and 1, or the emperical alien data. The categorization rules were manually specified so dangerous depended on the value of features 1 and 2 only, thus, resembling a low complexity condition.
+The models have been run on either simulated feautures that are binary or continuous between 0 and 1, or the emperical data. The categorization rules were manually specified so the category depended on the value of features 1 and 2 only, thus, resembling a low complexity condition.
 
+The files a named as follows ``parameter_recovery_[model name]_[data type][n observations]_[index].csv``. Thus, the files ``parameter_recovery_gcm_binary104_1.csv`` includes samples from parameter recovery of the GCM model using simulated binary features and 104 trials. The index just allows for multiple runs with identical arguments.
+
+*Explanation of files that were run before systematic naming:*
 | file name | model | data | n observations | n participants |
 | --- | --- | --- | --- | --- | 
 | parameter_recovery_gcm_aliendata.csv | ``stan/gcm.stan`` | Alien data | 104 | 1 | 
