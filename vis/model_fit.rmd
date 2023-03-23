@@ -4,6 +4,7 @@
 library(pacman)
 pacman::p_load(
     tidyverse,
+    plyr,
     patchwork
 )
 ```
@@ -13,8 +14,10 @@ pacman::p_load(
 ## Reinforcement Learning
 ### load data
 ```{r}
-alien_data <- read_csv("data/AlienData.csv")
-draws_df <- read_csv("data/rl_samples.csv")
+draws_df <- read_csv("data/rl_samples.csv") %>%
+    mutate(
+        condition = ifelse(subject > 100, 2, 1)
+    )
 
 # update colnames
 new_colnames <- c()
@@ -96,128 +99,34 @@ ggplot(draws_df) +
 ggsave("figs/rl/chain_iterations_alphapos.png")
 ```
 
-Prior predictive checks
 ```{r}
-lower_idx <- match("priorpred_1", colnames(draws_df))
-upper_idx <- match(paste("priorpred_", 104, sep = ""), colnames(draws_df))
-priorpreds_draws_df <- draws_df %>%
-    pivot_longer(
-        c(lower_idx:upper_idx),
-        names_to = "trial", values_to = "priorpreds"
-    ) %>%
-    mutate(
-        trial_number = as.factor(str_extract(trial, "\\d+")),
-        priorpreds = as.factor(priorpreds)
-    ) %>%
-    select(c(trial, trial_number, priorpreds))
-```
-
-```{r}
-priorpreds_draws_df %>%
-    mutate(
-        priorpreds = as.numeric(priorpreds) - 1,
-    ) %>%
-    summarize(
-        danger_response = sum(priorpreds) / n()
-    )
-```
-
-```{r}
-ggplot(data = priorpreds_draws_df) +
-    geom_histogram(
-        aes(x = priorpreds),
-        stat = "count"
+p1 <- ggplot(draws_df) +
+    geom_point(
+        aes(alpha_neg, alpha_pos, group = .chain, color = .chain),
+        alpha = 0.1
     ) +
-    theme_bw()
-```
+    theme_bw() +
+    labs(x = "alpha negative", y = "alpha positive")
 
-```{r}
-lower_idx <- match("theta_prior_1", colnames(draws_df))
-upper_idx <- match(paste("theta_prior_", 104, sep = ""), colnames(draws_df))
-theta_prior_draws_df <- draws_df %>%
-    pivot_longer(
-        c(lower_idx:upper_idx),
-        names_to = "trial", values_to = "theta_prior"
-    ) %>%
-    mutate(
-        trial_number = as.factor(str_extract(trial, "\\d+"))
-    ) %>%
-    select(c(trial, trial_number, theta_prior))
-```
-
-```{r}
-ggplot(data = theta_prior_draws_df) +
-    geom_density(
-        aes(
-            x = theta_prior,
-            group = as.numeric(trial_number),
-            fill = as.numeric(trial_number)
-        ),
-        alpha = .5
+p2 <- ggplot(draws_df) +
+    geom_point(
+        aes(alpha_neg, temp, group = .chain, color = .chain),
+        alpha = 0.1
     ) +
-    theme_bw()
-```
+    theme_bw() +
+    labs(x = "alpha negative", y = "temperature")
 
-Posterior predictive checks
-```{r}
-lower_idx <- match("posteriorpred_1", colnames(draws_df))
-upper_idx <- match(paste("posteriorpred_", 104, sep = ""), colnames(draws_df))
-posteriorpreds_draws_df <- draws_df %>%
-    pivot_longer(
-        c(lower_idx:upper_idx),
-        names_to = "trial", values_to = "posteriorpreds"
-    ) %>%
-    mutate(
-        trial_number = as.factor(str_extract(trial, "\\d+")),
-        posteriorpreds = as.factor(posteriorpreds)
-    ) %>%
-    select(c(trial, trial_number, posteriorpreds))
-```
-
-```{r}
-posteriorpreds_draws_df %>%
-    mutate(
-        posteriorpreds = as.numeric(posteriorpreds) - 1,
-    ) %>%
-    summarize(
-        danger_response = sum(posteriorpreds) / n()
-    )
-```
-
-```{r}
-ggplot(data = posteriorpreds_draws_df) +
-    geom_histogram(
-        aes(x = posteriorpreds),
-        stat = "count"
+p3 <- ggplot(draws_df) +
+    geom_point(
+        aes(alpha_pos, temp, group = .chain, color = .chain),
+        alpha = 0.1
     ) +
-    theme_bw()
-```
+    theme_bw() +
+    labs(x = "alpha positive", y = "temperature")
 
-```{r}
-lower_idx <- match("theta_1", colnames(draws_df))
-upper_idx <- match(paste("theta_", 104, sep = ""), colnames(draws_df))
-theta_draws_df <- draws_df %>%
-    pivot_longer(
-        c(lower_idx:upper_idx),
-        names_to = "trial", values_to = "theta"
-    ) %>%
-    mutate(
-        trial_number = as.factor(str_extract(trial, "\\d+"))
-    ) %>%
-    select(c(trial, trial_number, theta))
-```
+p1 / (p2 + p3)
 
-```{r}
-ggplot(data = theta_draws_df) +
-    geom_density(
-        aes(
-            x = theta,
-            group = as.numeric(trial_number),
-            fill = as.numeric(trial_number)
-        ),
-        alpha = .5
-    ) +
-    theme_bw()
+ggsave("figs/rl/chains_correlation.png", width = 10)
 ```
 
 Theta
@@ -262,6 +171,7 @@ p1 + p2
 Alpha parameters
 ```{r}
 draws_df %>%
+    group_by(condition) %>%
     summarize(
         mean_alpha_neg = mean(alpha_neg),
         sd_alpha_neg = sd(alpha_neg),
@@ -287,6 +197,7 @@ ggsave("figs/rl/prior-pos-update-alphaneg.png")
 
 ```{r}
 draws_df %>%
+    group_by(condition) %>%
     summarize(
         mean_alpha_pos = mean(alpha_pos),
         sd_alpha_pos = sd(alpha_pos),
@@ -406,53 +317,78 @@ p1 + p2
 ```
 
 ```{r}
+for (f in 1:5) {
+    value_f_0 <- paste("values_1_", f, sep = "")
+    value_f_1 <- paste("values_2_", f, sep = "")
+    p <- ggplot(draws_df) +
+        geom_density(
+            aes_string(x = value_f_0),
+            fill = "orange", alpha = .3
+        ) +
+        geom_density(
+            aes_string(x = value_f_1),
+            fill = "purple", alpha = .3
+        ) +
+        theme_bw() +
+        labs(
+            title = paste("Feature", f),
+            x = "value"
+        )
+
+    assign(paste("p", f, sep = ""), p)
+}
+
+p1 + p2 + p3 + p4 + p5
+```
+
+```{r}
 p1 <- ggplot(data = draws_df) +
     geom_density(
         aes(x = values_2_1),
-        fill = "blue", alpha = .3
+        fill = "blue", alpha = .1
     ) +
     geom_density(
         aes(x = values_2_2),
-        fill = "purple", alpha = .3
+        fill = "purple", alpha = .1
     ) +
     geom_density(
         aes(x = values_2_3),
-        fill = "red", alpha = .3
+        fill = "red", alpha = .1
     ) +
     geom_density(
         aes(x = values_2_4),
-        fill = "yellow", alpha = .3
+        fill = "yellow", alpha = .1
     ) +
     geom_density(
         aes(x = values_2_5),
-        fill = "green", alpha = .3
+        fill = "green", alpha = .1
     ) +
     theme_bw() +
-    labs(x = "Value", title = "Values Non-Dangerous")
+    labs(x = "Value", title = "Feature = 0")
 
 p2 <- ggplot(data = draws_df) +
     geom_density(
         aes(x = values_1_1),
-        fill = "blue", alpha = .3
+        fill = "blue", alpha = .1
     ) +
     geom_density(
         aes(x = values_1_2),
-        fill = "purple", alpha = .3
+        fill = "purple", alpha = .1
     ) +
     geom_density(
         aes(x = values_1_3),
-        fill = "red", alpha = .3
+        fill = "red", alpha = .1
     ) +
     geom_density(
         aes(x = values_1_4),
-        fill = "yellow", alpha = .3
+        fill = "yellow", alpha = .1
     ) +
     geom_density(
         aes(x = values_1_5),
-        fill = "green", alpha = .3
+        fill = "green", alpha = .1
     ) +
     theme_bw() +
-    labs(x = "Value", title = "Values Dangerous")
+    labs(x = "Value", title = "Feature = 1")
 
 p1 + p2
 ```
