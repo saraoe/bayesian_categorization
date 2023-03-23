@@ -129,5 +129,6 @@ generated quantities {
 
    // posterior predictive checks
    array[ntrials] int<lower=0, upper=1> posteriorpred = bernoulli_rng(theta);
+   matrix[2, nfeatures] values_posterior = values;
 
 }
