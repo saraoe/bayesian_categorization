@@ -45,6 +45,8 @@ if (model == "gcm") {
   file <- file.path("stan/gcm.stan")
 } else if (model == "rl") {
   file <- file.path("stan/reinforcement_learning.stan")
+} else if (model == "rl_simple") {
+  file <- file.path("stan(reinforcement_learning_simple.stan")
 }
 mod <- cmdstan_model(
   file,
@@ -116,6 +118,41 @@ if (model == "rl") {
           }
         )
       }
+    }
+  }
+}
+
+if (model == "rl") {
+  # parameters
+  alpha_parameters <- seq(from = 0, to = 1, length.out = 4)
+  temp_parameters <- seq(from = 0, to = 10, length.out = 4)
+  
+  for (alpha in alpha_parameters) {
+    for (temp in temp_parameters) {
+      # trycatch to continue if sampling fails
+      tryCatch(
+        {
+          tmp <- param_recov_rl(
+            n_obs = n_obs,
+            n_features = 5,
+            type = feature_type,
+            alpha_pos = alpha,
+            alpha_neg = alpha,
+            temp = temp,
+            seed = seed
+          )
+          
+          if (exists("recovery_df")) {
+            recovery_df <- rbind(recovery_df, tmp)
+          } else {
+            recovery_df <- tmp
+          }
+        },
+        error = function(e) {
+          print(e)
+          print("continuing")
+        }
+      )
     }
   }
 }
