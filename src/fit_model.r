@@ -107,7 +107,7 @@ for (sub in unique(df$subject)) {
 
         # save results
         draws_df <- as_draws_df(samples$draws())
-        draws_df$condition <- con
+        draws_df$condition <- ifelse(sub > 100, 2, 1)
         draws_df$subject <- sub
         draws_df$session <- ses
 
