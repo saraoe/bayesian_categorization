@@ -87,7 +87,15 @@ param_recov_gcm <- function(n_obs, n_features, type, w, c, seed = 101) {
 
 
 # Reinforcement Learning
-param_recov_rl <- function(n_obs, n_features, type, alpha_pos, alpha_neg, temp, seed = 101) {
+param_recov_rl <- function(
+                          model_name,
+                          n_obs,
+                          n_features, 
+                          type, 
+                          alpha_pos, 
+                          alpha_neg, 
+                          temp, 
+                          seed = 101) {
   set.seed(seed)
 
   print(paste("alpha_pos =", alpha_pos))
@@ -112,16 +120,28 @@ param_recov_rl <- function(n_obs, n_features, type, alpha_pos, alpha_neg, temp, 
   )
 
   # prepare data and run model
-  data <- list(
-    ntrials = nrow(observations),
-    nfeatures = ncol(observations),
-    cat_one = danger,
-    y = responses,
-    obs = as.matrix(observations),
-    alpha_neg_prior_values = c(0, 1),
-    alpha_pos_prior_values = c(0, 1),
-    temp_prior_values = c(0, 1)
-  )
+  if (model_name == "rl") {
+    data <- list(
+      ntrials = nrow(observations),
+      nfeatures = ncol(observations),
+      cat_one = danger,
+      y = responses,
+      obs = as.matrix(observations),
+      alpha_neg_prior_values = c(0, 1),
+      alpha_pos_prior_values = c(0, 1),
+      temp_prior_values = c(0, 1)
+    )
+  } else if (model_name == "rl_simple") {
+    data <- list(
+      ntrials = nrow(observations),
+      nfeatures = ncol(observations),
+      cat_one = danger,
+      y = responses,
+      obs = as.matrix(observations),
+      alpha_prior_values = c(0, 1),
+      temp_prior_values = c(0, 1)
+    )
+  }
 
   set_cmdstan_path("/work/MA_thesis/cmdstan-2.31.0")
   samples <- mod$sample(
@@ -140,18 +160,27 @@ param_recov_rl <- function(n_obs, n_features, type, alpha_pos, alpha_neg, temp, 
   draws_df <- as_draws_df(samples$draws())
 
   # make ouput df
-  relevant_cols <- c(
-    "alpha_neg", "alpha_neg_prior",
-    "alpha_pos", "alpha_pos_prior",
-    "temp", "temp_prior"
-  )
+  if (model_name == "rl") {
+    alpha_cols <- c("alpha_neg", "alpha_neg_prior",
+                    "alpha_pos", "alpha_pos_prior")
+  } else if (model_name == "rl_simple") {
+    alpha_cols <- c("alpha", "alpha_prior")
+  }
+  
+  relevant_cols <- c(alpha_cols, "temp", "temp_prior")
 
   out_df <- draws_df %>%
     select(relevant_cols)
-  out_df$true_alpha_pos <- alpha_pos
-  out_df$true_alpha_neg <- alpha_neg
+  
   out_df$nobservations <- n_obs
   out_df$true_temp <- temp
+  
+  if (model_name == "rl") {
+    out_df$true_alpha_pos <- alpha_pos
+    out_df$true_alpha_neg <- alpha_neg
+  } else if (model_name == "rl_simple") {
+    out_df$true_alpha <- alpha_pos
+  }
 
   return(out_df)
 }

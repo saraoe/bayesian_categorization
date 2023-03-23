@@ -97,6 +97,7 @@ if (model == "rl") {
         tryCatch(
           {
             tmp <- param_recov_rl(
+              model_name = model,
               n_obs = n_obs,
               n_features = 5,
               type = feature_type,
@@ -122,7 +123,7 @@ if (model == "rl") {
   }
 }
 
-if (model == "rl") {
+if (model == "rl_simple") {
   # parameters
   alpha_parameters <- seq(from = 0, to = 1, length.out = 4)
   temp_parameters <- seq(from = 0, to = 10, length.out = 4)
@@ -133,6 +134,7 @@ if (model == "rl") {
       tryCatch(
         {
           tmp <- param_recov_rl(
+            model_name = model,
             n_obs = n_obs,
             n_features = 5,
             type = feature_type,
