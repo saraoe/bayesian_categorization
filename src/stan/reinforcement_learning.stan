@@ -127,7 +127,6 @@ generated quantities {
     }
    priorpred = bernoulli_rng(theta_prior);
 
-
    // posterior predictive checks
    array[ntrials] int<lower=0, upper=1> posteriorpred = bernoulli_rng(theta);
    array[ntrials] int<lower=0, upper=1> posteriorcorrect;
@@ -137,6 +136,13 @@ generated quantities {
         } else {
             posteriorcorrect[i] = 0;
         }
+   }
+
+   // log likelihood
+   array[ntrials] real log_lik;
+
+   for (i in 1:ntrials) {
+        log_lik[i] = bernoulli_lpmf(y[i] | theta[i]);
    }
 
 }

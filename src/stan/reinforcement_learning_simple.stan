@@ -121,4 +121,11 @@ generated quantities {
         }
    }
 
+   // log likelihood
+   array[ntrials] real log_lik;
+
+   for (i in 1:ntrials) {
+        log_lik[i] = bernoulli_lpmf(y[i] | theta[i]);
+   }
+
 }
