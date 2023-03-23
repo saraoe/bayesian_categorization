@@ -1,5 +1,6 @@
 // 
 // Rescorla-Wagner Reinforcement Learning
+// with two alpha parameters
 // 
 // NB: Only works with binary features
 // NB: Only works with two categories!
@@ -129,5 +130,13 @@ generated quantities {
 
    // posterior predictive checks
    array[ntrials] int<lower=0, upper=1> posteriorpred = bernoulli_rng(theta);
+   array[ntrials] int<lower=0, upper=1> posteriorcorrect;
+   for (i in 1:ntrials) {
+        if (posteriorpred[i] == cat_one[i]) {
+            posteriorcorrect[i] = 1;
+        } else {
+            posteriorcorrect[i] = 0;
+        }
+   }
 
 }
