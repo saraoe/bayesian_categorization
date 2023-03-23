@@ -76,8 +76,8 @@ model {
 
 generated quantities {
     // priors
-   real logit_alpha_prior = normal_rng(alpha_neg_prior_values[1], alpha_neg_prior_values[2]);
-   real<lower=0, upper=1> alpha_prior = inv_logit(logit_alpha_neg_prior);
+   real logit_alpha_prior = normal_rng(alpha_prior_values[1], alpha_prior_values[2]);
+   real<lower=0, upper=1> alpha_prior = inv_logit(logit_alpha_prior);
 
    real logit_temp_prior = normal_rng(temp_prior_values[1], temp_prior_values[2]);
    real<lower=0, upper=20> temp_prior = inv_logit(logit_temp_prior)*20;
@@ -88,7 +88,6 @@ generated quantities {
 
    // code from model
     real pe;
-    real alpha;
     matrix[2, nfeatures] values_prior;
     vector[nfeatures] value_sum;
     int f_val;
@@ -102,7 +101,7 @@ generated quantities {
 
             pe = feedback[t] - values_prior[f_val, f];
 
-            values_prior[f_val, f] = values_prior[f_val, f] + alpha*pe;  //only update value for the observed feature
+            values_prior[f_val, f] = values_prior[f_val, f] + alpha_prior*pe;  //only update value for the observed feature
         }
 
         theta_prior[t] = inv_logit(temp * sum(value_sum));

@@ -46,7 +46,7 @@ if (model == "gcm") {
 } else if (model == "rl") {
   file <- file.path("stan/reinforcement_learning.stan")
 } else if (model == "rl_simple") {
-  file <- file.path("stan(reinforcement_learning_simple.stan")
+  file <- file.path("stan/reinforcement_learning_simple.stan")
 }
 mod <- cmdstan_model(
   file,
