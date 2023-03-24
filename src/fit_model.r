@@ -22,7 +22,7 @@ print(paste("Fitting", model))
 print("------------")
 
 # load data
-df <- read_csv("../data/AlienData.csv") %>%
+df <- read_csv("data/AlienData.csv") %>%
     mutate( # add feature values
         f1 = as.numeric(substr(stimulus, 1, 1)),
         f2 = as.numeric(substr(stimulus, 2, 2)),
@@ -45,10 +45,13 @@ df <- read_csv("../data/AlienData.csv") %>%
 
 # load model
 print("Compiling model")
+set_cmdstan_path("/work/MA_thesis/cmdstan-2.31.0")
 if (model == "gcm") {
-    file <- file.path("../src/stan/gcm.stan")
+    file <- file.path("src/stan/gcm.stan")
 } else if (model == "rl") {
-    file <- file.path("../src/stan/reinforcement_learning.stan")
+    file <- file.path("src/stan/reinforcement_learning.stan")
+} else if (model == "rl_simple") {
+    file <- file.path("src/stan/reinforcement_learning_simple.stan")
 }
 mod <- cmdstan_model(
     file,
@@ -88,6 +91,16 @@ for (sub in unique(df$subject)) {
                 alpha_pos_prior_values = c(0, 1),
                 temp_prior_values = c(0, 1)
             )
+        } else if (model == "rl_simple") {
+            data <- list(
+                ntrials = nrow(observations),
+                nfeatures = ncol(observations),
+                cat_one = tmp$nutricious,
+                y = tmp$nutricious_response,
+                obs = as.matrix(observations),
+                alpha_prior_values = c(0, 1),
+                temp_prior_values = c(0, 1)
+            )
         }
 
 
@@ -121,7 +134,7 @@ for (sub in unique(df$subject)) {
 print("------------")
 
 # write results
-out_path <- paste("../data/", model, "_samples.csv", sep = "")
+out_path <- paste("data/", model, "_samples.csv", sep = "")
 write.csv(output_df, out_path)
 print(paste("output_df written to path:", out_path))
 print("DONE")
