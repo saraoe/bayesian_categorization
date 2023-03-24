@@ -35,18 +35,18 @@ pacman::p_load(
 )
 
 # Load functions
-source("../src/fit_param_recov.r")
-source("../src/generative_models.r")
-source("../src/util.r")
+source("src/fit_param_recov.r")
+source("src/generative_models.r")
+source("src/util.r")
 
 ## LOAD MODEL ##
 set_cmdstan_path("/work/MA_thesis/cmdstan-2.31.0")
 if (model == "gcm") {
-  file <- file.path("stan/gcm.stan")
+  file <- file.path("src/stan/gcm.stan")
 } else if (model == "rl") {
-  file <- file.path("stan/reinforcement_learning.stan")
+  file <- file.path("src/stan/reinforcement_learning.stan")
 } else if (model == "rl_simple") {
-  file <- file.path("stan/reinforcement_learning_simple.stan")
+  file <- file.path("src/stan/reinforcement_learning_simple.stan")
 }
 mod <- cmdstan_model(
   file,
@@ -162,7 +162,7 @@ if (model == "rl_simple") {
 
 ### SAVE RESULTS ##
 save_path <- paste(
-  "../data/recovery/parameter_recovery_",
+  "data/recovery/parameter_recovery_",
   model,
   "_",
   feature_type,
