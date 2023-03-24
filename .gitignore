@@ -2,6 +2,7 @@ data/AlienData.csv
 data_inspection.rmd
 data/*
 figs/*
+logs/*
 
 test_models/*
 src/stan/bias*
