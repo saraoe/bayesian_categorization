@@ -6,7 +6,8 @@ library(pacman)
 pacman::p_load(
     tidyverse,
     boot,
-    RColorBrewer
+    RColorBrewer,
+    latex2exp
 )
 ```
 
@@ -28,14 +29,14 @@ tibble(
         similarity = exp(-c * distance)
     ) %>%
     ggplot() +
-    geom_line(aes(x = distance, y = similarity, color = as.factor(c))) +
+    geom_line(aes(x = distance, y = similarity, group = c, color = c)) +
     theme_classic() +
-    scale_color_brewer(palette = "PuOr") +
+    scale_color_distiller(palette = "PuOr") +
     labs(
-        color = "C parameter"
+        color = "c"
     )
 
-ggsave("figs/gcm/prior_c.png", width = 10)
+ggsave("figs/gcm/prior_c.png", width = 7, height = 7)
 ```
 
 ## Reinforcement learning
@@ -53,16 +54,16 @@ tibble(
     temperature = rep(temperatures, grid)
 ) %>%
     mutate(
-        temperature_f = as.factor(temperature),
         probability = boot::inv.logit(temperature * value)
     ) %>%
     ggplot() +
-    geom_line(aes(x = value, y = probability, color = temperature_f)) +
+    geom_line(aes(x = value, y = probability,
+                  group = temperature, color = temperature)) +
     theme_classic() +
-    scale_color_brewer(palette = "PuOr") +
+    scale_color_distiller(palette = "PuOr") +
     labs(
-        color = "Temperature"
+        color = latex2exp::TeX("$\\tau$")
     )
 
-ggsave("figs/rl/prior_temp.png", width = 10)
+ggsave("figs/rl/prior_temp.png", width = 7, height = 7)
 ```
