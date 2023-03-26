@@ -1,7 +1,7 @@
 ### fit parameter recovery ###
 
 # GCM
-param_recov_gcm <- function(n_obs, n_features, type, w, c, seed = 101) {
+param_recov_gcm <- function(model_name, n_obs, n_features, type, w, c, seed = 101) {
   set.seed(seed)
 
   print(paste("c =", c))
@@ -31,16 +31,29 @@ param_recov_gcm <- function(n_obs, n_features, type, w, c, seed = 101) {
   )
 
   # prepare data and run model
-  data <- list(
-    ntrials = nrow(observations),
-    nfeatures = ncol(observations),
-    cat_one = danger,
-    y = responses,
-    obs = as.matrix(observations),
-    b = .5, # no bias
-    w_prior_values = rep(1, 5),
-    c_prior_values = c(0, 1)
-  )
+  if (model_name == "gcm") {
+    data <- list(
+      ntrials = nrow(observations),
+      nfeatures = ncol(observations),
+      cat_one = danger,
+      y = responses,
+      obs = as.matrix(observations),
+      b = .5, # no bias
+      w_prior_values = rep(1, 5),
+      c_prior_values = c(0, 1)
+    )
+  } else if (model_name == "gcm_fixed_c") {
+    data <- list(
+      ntrials = nrow(observations),
+      nfeatures = ncol(observations),
+      cat_one = danger,
+      y = responses,
+      obs = as.matrix(observations),
+      b = .5, # no bias
+      c = c,
+      w_prior_values = rep(1, 5)
+    )
+  }
 
   set_cmdstan_path("/work/MA_thesis/cmdstan-2.31.0")
   samples <- mod$sample(
@@ -67,8 +80,12 @@ param_recov_gcm <- function(n_obs, n_features, type, w, c, seed = 101) {
     ),
     colnames(draws_df)
   )
-
-  relevant_cols <- c("c", "c_prior")
+  
+  if (model_name == "gcm") {
+    relevant_cols <- c("c", "c_prior")
+  } else if (model_name == "gcm_fixed_c") {
+    relevant_cols <- c()
+  }
   for (colname in colnames(draws_df)) {
     if (grepl("w_", colname, fixed = TRUE)) {
       relevant_cols <- c(relevant_cols, colname)

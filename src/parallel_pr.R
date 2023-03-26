@@ -43,6 +43,8 @@ source("src/util.r")
 set_cmdstan_path("/work/MA_thesis/cmdstan-2.31.0")
 if (model == "gcm") {
   file <- file.path("src/stan/gcm.stan")
+} else if (model == "gcm_fixed_c") {
+  file <- file.path("src/stan/gcm_fixed_c.stan")
 } else if (model == "rl") {
   file <- file.path("src/stan/reinforcement_learning.stan")
 } else if (model == "rl_simple") {
@@ -59,7 +61,7 @@ print("Done compiling!")
 print("--------------")
 print("RUNNING PARAMETER RECOVERY")
 
-if (model == "gcm") {
+if (model == "gcm" || model == "gcm_fixed_c") {
   # parameters
   c_parameters <- seq(from = 0, to = 2, length.out = 6)
   w_parameters <- c("1,0,0,0,0", "0.2,0.2,0.2,0.2,0.2")
@@ -67,6 +69,7 @@ if (model == "gcm") {
   for (c in c_parameters) {
     for (w in w_parameters) {
       tmp <- param_recov_gcm(
+        model_name = model,
         n_obs = n_obs,
         n_features = 5,
         type = feature_type,
