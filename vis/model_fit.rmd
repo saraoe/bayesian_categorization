@@ -4,14 +4,13 @@
 library(pacman)
 pacman::p_load(
     tidyverse,
-    plyr,
     patchwork
 )
 ```
 
 ## GCM
 
-## Reinforcement Learning
+## Reinforcement Learning (assymetrical)
 ### load data
 ```{r}
 draws_df <- read_csv("data/rl_samples.csv")
@@ -288,6 +287,320 @@ ggplot(data = draws_df) +
     xlab("Temperature")
 
 ggsave("figs/rl/prior-pos-update-temp-condition.png")
+```
+
+Values
+```{r}
+draws_df %>%
+    summarize(
+        mean(values_1_1),
+        # sd(values_1_1),
+        mean(values_1_2),
+        # sd(values_1_2),
+        mean(values_1_3),
+        # sd(values_1_3),
+        mean(values_1_4),
+        # sd(values_1_4),
+        mean(values_1_5),
+        # sd(values_1_5)
+    )
+```
+
+```{r}
+p1 <- ggplot(data = draws_df) +
+    geom_density(
+        aes(x = values_prior_1_1),
+        fill = "blue", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_prior_1_2),
+        fill = "purple", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_prior_1_3),
+        fill = "red", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_prior_1_4),
+        fill = "yellow", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_prior_1_5),
+        fill = "green", alpha = .3
+    ) +
+    theme_bw() +
+    labs(x = "Value", title = "Prior Values")
+
+p2 <- ggplot(data = draws_df) +
+    geom_density(
+        aes(x = values_1_1),
+        fill = "blue", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_1_2),
+        fill = "purple", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_1_3),
+        fill = "red", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_1_4),
+        fill = "yellow", alpha = .3
+    ) +
+    geom_density(
+        aes(x = values_1_5),
+        fill = "green", alpha = .3
+    ) +
+    theme_bw() +
+    labs(x = "Value", title = "Posterior Values")
+
+p1 + p2
+```
+
+```{r}
+for (f in 1:5) {
+    value_f_0 <- paste("values_1_", f, sep = "")
+    value_f_1 <- paste("values_2_", f, sep = "")
+    p <- ggplot(draws_df) +
+        geom_density(
+            aes_string(x = value_f_0),
+            fill = "orange", alpha = .3
+        ) +
+        geom_density(
+            aes_string(x = value_f_1),
+            fill = "purple", alpha = .3
+        ) +
+        theme_bw() +
+        labs(
+            title = paste("Feature", f),
+            x = "value"
+        )
+
+    assign(paste("p", f, sep = ""), p)
+}
+
+p1 + p2 + p3 + p4 + p5
+```
+
+```{r}
+p1 <- ggplot(data = draws_df) +
+    geom_density(
+        aes(x = values_2_1),
+        fill = "blue", alpha = .1
+    ) +
+    geom_density(
+        aes(x = values_2_2),
+        fill = "purple", alpha = .1
+    ) +
+    geom_density(
+        aes(x = values_2_3),
+        fill = "red", alpha = .1
+    ) +
+    geom_density(
+        aes(x = values_2_4),
+        fill = "yellow", alpha = .1
+    ) +
+    geom_density(
+        aes(x = values_2_5),
+        fill = "green", alpha = .1
+    ) +
+    theme_bw() +
+    labs(x = "Value", title = "Feature = 0")
+
+p2 <- ggplot(data = draws_df) +
+    geom_density(
+        aes(x = values_1_1),
+        fill = "blue", alpha = .1
+    ) +
+    geom_density(
+        aes(x = values_1_2),
+        fill = "purple", alpha = .1
+    ) +
+    geom_density(
+        aes(x = values_1_3),
+        fill = "red", alpha = .1
+    ) +
+    geom_density(
+        aes(x = values_1_4),
+        fill = "yellow", alpha = .1
+    ) +
+    geom_density(
+        aes(x = values_1_5),
+        fill = "green", alpha = .1
+    ) +
+    theme_bw() +
+    labs(x = "Value", title = "Feature = 1")
+
+p1 + p2
+```
+
+## Reinforcement Learning (simple)
+### load data
+```{r}
+draws_df <- read_csv("data/rl_simple_samples.csv")
+
+# update colnames
+new_colnames <- c()
+for (colname in colnames(draws_df)) {
+    if (grepl("values_prior", colname, fixed = TRUE)) { # specific case
+        new_colname <- paste("values_prior_",
+            str_extract_all(colname, "\\d+")[[1]][1], "_",
+            str_extract_all(colname, "\\d+")[[1]][2],
+            sep = ""
+        )
+        new_colnames <- c(new_colnames, new_colname)
+    } else if (grepl(",", colname, fixed = TRUE)) { # matrix
+        new_colname <- paste(str_extract(colname, "\\w+"), "_",
+            str_extract_all(colname, "\\d+")[[1]][1], "_",
+            str_extract_all(colname, "\\d+")[[1]][2],
+            sep = ""
+        )
+        new_colnames <- c(new_colnames, new_colname)
+    } else if (grepl("[", colname, fixed = TRUE)) { # array
+        new_colname <- paste(str_extract(colname, "\\w+"), "_",
+            str_extract(colname, "\\d+"),
+            sep = ""
+        )
+        new_colnames <- c(new_colnames, new_colname)
+    } else {
+        new_colnames <- c(new_colnames, colname)
+    }
+}
+colnames(draws_df) <- new_colnames
+```
+
+### inspection
+Chains
+```{r}
+p1 <- ggplot(draws_df) +
+    geom_line(aes(.iteration, temp, group = .chain, color = .chain)) +
+    theme_bw() +
+    labs(y = "Temperature")
+
+p2 <- ggplot(draws_df) +
+    geom_line(aes(.iteration, alpha, group = .chain, color = .chain)) +
+    theme_bw() +
+    labs(y = "Alpha")
+
+p1 / p2 +
+    plot_annotation(title = "Chain iterations")
+
+ggsave("figs/rl_simple/chain_iterations.png")
+```
+
+```{r}
+ggplot(draws_df) +
+    geom_line(aes(.iteration, temp, group = .chain, color = .chain)) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
+    labs(y = "Temperature")
+
+ggsave("figs/rl_simple/chain_iterations_temp.png")
+
+ggplot(draws_df) +
+    geom_line(aes(.iteration, alpha, group = .chain, color = .chain)) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
+    labs(y = "Alpha")
+
+ggsave("figs/rl_simple/chain_iterations_alpha.png")
+```
+
+```{r}
+ggplot(draws_df) +
+    geom_point(
+        aes(alpha, temp, group = .chain, color = .chain),
+        alpha = 0.1
+    ) +
+    theme_bw() +
+    labs(x = "alpha", y = "temperature")
+
+ggsave("figs/rl_simple/chains_correlation.png", width = 7)
+```
+
+Alpha parameter
+```{r}
+draws_df %>%
+    group_by(condition) %>%
+    summarize(
+        mean_alpha = mean(alpha),
+        sd_alpha = sd(alpha),
+        mean_alpha_prior = mean(alpha_prior),
+        sd_alpha_prior = sd(alpha_prior)
+    )
+```
+
+```{r}
+ggplot(data = draws_df) +
+    geom_density(aes(x = alpha_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = alpha), fill = "red", alpha = .5) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
+    labs(
+        title = "Prior Posterior update: Alpha",
+        caption = "Prior (blue) and posterior (red)"
+    ) +
+    xlab("Alpha")
+
+ggsave("figs/rl_simple/prior-pos-update-alpha.png")
+```
+
+```{r}
+ggplot(data = draws_df) +
+    geom_density(aes(x = alpha_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = alpha), fill = "red", alpha = .5) +
+    theme_bw() +
+    facet_wrap(. ~ condition) +
+    labs(
+        title = "Prior Posterior update: Alpha",
+        caption = "Prior (blue) and posterior (red)"
+    ) +
+    xlab("Alpha")
+
+ggsave("figs/rl_simple/prior-pos-update-alpha-condtion.png")
+```
+
+Temperature
+```{r}
+draws_df %>%
+    group_by(condition) %>%
+    summarize(
+        mean_temp = mean(temp),
+        sd_temp = sd(temp),
+        mean_temp_prior = mean(temp_prior),
+        sd_temp_prior = sd(temp_prior)
+    )
+```
+
+```{r}
+ggplot(data = draws_df) +
+    geom_density(aes(x = temp_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = temp), fill = "red", alpha = .5) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
+    labs(
+        title = "Prior Posterior update: Temperature",
+        caption = "Prior (blue) and posterior (red)"
+    ) +
+    xlab("Temperature")
+
+ggsave("figs/rl_simple/prior-pos-update-temp.png")
+```
+
+```{r}
+ggplot(data = draws_df) +
+    geom_density(aes(x = temp_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = temp), fill = "red", alpha = .5) +
+    theme_bw() +
+    facet_wrap(. ~ condition) +
+    labs(
+        title = "Prior Posterior update: Temperature",
+        caption = "Prior (blue) and posterior (red)"
+    ) +
+    xlab("Temperature")
+
+ggsave("figs/rl_simple/prior-pos-update-temp-condition.png")
 ```
 
 Values
