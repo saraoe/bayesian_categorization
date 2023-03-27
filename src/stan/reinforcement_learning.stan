@@ -92,7 +92,7 @@ generated quantities {
    real<lower=0, upper=1> alpha_pos_prior = inv_logit(logit_alpha_pos_prior);
 
    real logit_temp_prior = normal_rng(temp_prior_values[1], temp_prior_values[2]);
-   real<lower=0, upper=20> temp_prior = inv_logit(logit_temp_prior)*20;
+   real<lower=0, upper=20> temp_prior = inv_logit(logit_temp_prior) * 20;
 
    // prior predictive checks
    array[ntrials] real<lower=0, upper=1> theta_prior;
@@ -122,7 +122,7 @@ generated quantities {
             values_prior[f_val, f] = values_prior[f_val, f] + alpha*pe;  //only update value for the observed feature
         }
 
-        theta_prior[t] = inv_logit(temp * sum(value_sum));
+        theta_prior[t] = inv_logit(temp_prior * sum(value_sum));
     
     }
    priorpred = bernoulli_rng(theta_prior);

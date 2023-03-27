@@ -104,7 +104,7 @@ generated quantities {
             values_prior[f_val, f] = values_prior[f_val, f] + alpha_prior*pe;  //only update value for the observed feature
         }
 
-        theta_prior[t] = inv_logit(temp * sum(value_sum));
+        theta_prior[t] = inv_logit(temp_prior * sum(value_sum));
     
     }
    priorpred = bernoulli_rng(theta_prior);
