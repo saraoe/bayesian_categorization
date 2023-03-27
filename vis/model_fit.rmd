@@ -13,6 +13,12 @@ pacman::p_load(
 ## Reinforcement Learning (assymetrical)
 ### load data
 ```{r}
+aliendata <- read_csv("data/AlienData.csv") %>%
+                filter(session == 1) %>%
+                mutate(
+                    subject = ifelse(condition == 2, subject + 100, subject)
+                )
+
 draws_df <- read_csv("data/rl_samples.csv")
 
 # update colnames
@@ -122,7 +128,7 @@ p3 <- ggplot(draws_df) +
 
 p1 / (p2 + p3)
 
-ggsave("figs/rl/chains_correlation.png", width = 10)
+ggsave("figs/rl/chains_correlation.png", width = 7)
 ```
 
 Theta
@@ -435,6 +441,149 @@ p2 <- ggplot(data = draws_df) +
 p1 + p2
 ```
 
+Posterior prediction
+```{r}
+draws_df %>%
+    group_by(condition, session) %>%
+    summarize(
+        correct_1 = mean(posteriorcorrect_1),
+        correct_50 = mean(posteriorcorrect_50),
+        correct_96 = mean(posteriorcorrect_96),
+        correct_104 = mean(posteriorcorrect_104)
+    )
+```
+
+```{r}
+p1 <- ggplot(data = draws_df) +
+    geom_density(
+        aes(x = priorcorrect_1),
+        fill = "blue", alpha = .3
+    ) +
+    geom_density(
+        aes(x = priorcorrect_50),
+        fill = "purple", alpha = .3
+    ) +
+    geom_density(
+        aes(x = priorcorrect_96),
+        fill = "red", alpha = .3
+    ) +
+    geom_density(
+        aes(x = priorcorrect_104),
+        fill = "yellow", alpha = .3
+    ) +
+    theme_bw() +
+    labs(x = "correct category")
+
+p2 <- ggplot(data = draws_df) +
+    geom_density(
+        aes(x = posteriorcorrect_1),
+        fill = "blue", alpha = .3
+    ) +
+    geom_density(
+        aes(x = posteriorcorrect_50),
+        fill = "purple", alpha = .3
+    ) +
+    geom_density(
+        aes(x = posteriorcorrect_96),
+        fill = "red", alpha = .3
+    ) +
+    geom_density(
+        aes(x = posteriorcorrect_104),
+        fill = "yellow", alpha = .1
+    ) +
+    theme_bw() +
+    labs(x = "correct category")
+
+p1 + p2
+```
+
+```{r}
+rm(posteriorcorrect)
+
+for (t in 1:104) {
+    for (s in unique(draws_df$subject)) {
+        tmp_draws <- draws_df %>%
+            filter(subject == s)
+        col <- paste("tmp_draws$posteriorcorrect_", t, sep = "")
+        colvalues <- eval(parse(text = col))
+        mean_correct <- mean(colvalues)
+        sd_correct <- sd(colvalues)
+        tmp <- tibble(
+            correct = mean_correct,
+            sd = sd_correct,
+            trial = t,
+            condition = unique(tmp_draws$condition),
+            subject = s
+        )
+
+        if (exists("posteriorcorrect")) {
+            posteriorcorrect <- rbind(
+                posteriorcorrect, tmp
+            )
+        } else {
+            posteriorcorrect <- tmp
+        }
+    }
+}
+```
+
+```{r}
+posteriorcorrect <- posteriorcorrect %>%
+                    mutate(
+                        condition = as.factor(condition),
+                        subject = as.factor(subject),
+                        type = "simulated"
+                    ) %>%
+                    group_by(subject) %>%
+                    mutate(
+                        cumulative = cumsum(correct) / trial
+                    )
+
+real_correct <- aliendata %>%
+                select(c(condition, subject, correct, trial)) %>%
+                mutate(
+                    condition = as.factor(condition),
+                    subject = as.factor(subject),
+                    sd = 0,
+                    type = "real",
+                    cumulative = cumsum(correct) / trial
+                ) %>% 
+                group_by(subject) %>%
+                mutate(
+                    cumulative = cumsum(correct) / trial
+                )
+
+posteriorcorrect <- rbind(posteriorcorrect, real_correct)
+
+ggplot(data = posteriorcorrect) +
+    geom_point(aes(x = trial, y = correct, color = type)) +
+    geom_smooth(aes(x = trial, y = correct, color = type)) +
+    theme_bw() + facet_wrap(. ~ subject) +
+    scale_color_manual(values = c("orange", "purple"))
+
+ggplot(data = posteriorcorrect) +
+    geom_point(aes(x = trial, y = correct, color = type)) +
+    geom_smooth(aes(x = trial, y = correct, color = type)) +
+    geom_vline(aes(xintercept = 96), linetype = "dashed") +
+    theme_bw() + facet_wrap(. ~ condition) +
+    scale_color_manual(values = c("orange", "purple"))
+```
+
+```{r}
+ggplot(data = posteriorcorrect) +
+    geom_point(aes(x = trial, y = cumulative, color = type)) +
+    geom_line(aes(x = trial, y = cumulative, color = type)) +
+    theme_bw() + facet_wrap(. ~ subject) +
+    scale_color_manual(values = c("orange", "purple"))
+
+ggplot(data = posteriorcorrect) +
+    geom_point(aes(x = trial, y = cumulative, color = type)) +
+    geom_smooth(aes(x = trial, y = cumulative, color = type)) +
+    geom_vline(aes(xintercept = 96), linetype = "dashed") +
+    theme_bw() + facet_wrap(. ~ condition) +
+    scale_color_manual(values = c("orange", "purple"))
+```
+
 ## Reinforcement Learning (simple)
 ### load data
 ```{r}
@@ -601,150 +750,4 @@ ggplot(data = draws_df) +
     xlab("Temperature")
 
 ggsave("figs/rl_simple/prior-pos-update-temp-condition.png")
-```
-
-Values
-```{r}
-draws_df %>%
-    summarize(
-        mean(values_1_1),
-        # sd(values_1_1),
-        mean(values_1_2),
-        # sd(values_1_2),
-        mean(values_1_3),
-        # sd(values_1_3),
-        mean(values_1_4),
-        # sd(values_1_4),
-        mean(values_1_5),
-        # sd(values_1_5)
-    )
-```
-
-```{r}
-p1 <- ggplot(data = draws_df) +
-    geom_density(
-        aes(x = values_prior_1_1),
-        fill = "blue", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_prior_1_2),
-        fill = "purple", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_prior_1_3),
-        fill = "red", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_prior_1_4),
-        fill = "yellow", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_prior_1_5),
-        fill = "green", alpha = .3
-    ) +
-    theme_bw() +
-    labs(x = "Value", title = "Prior Values")
-
-p2 <- ggplot(data = draws_df) +
-    geom_density(
-        aes(x = values_1_1),
-        fill = "blue", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_1_2),
-        fill = "purple", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_1_3),
-        fill = "red", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_1_4),
-        fill = "yellow", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_1_5),
-        fill = "green", alpha = .3
-    ) +
-    theme_bw() +
-    labs(x = "Value", title = "Posterior Values")
-
-p1 + p2
-```
-
-```{r}
-for (f in 1:5) {
-    value_f_0 <- paste("values_1_", f, sep = "")
-    value_f_1 <- paste("values_2_", f, sep = "")
-    p <- ggplot(draws_df) +
-        geom_density(
-            aes_string(x = value_f_0),
-            fill = "orange", alpha = .3
-        ) +
-        geom_density(
-            aes_string(x = value_f_1),
-            fill = "purple", alpha = .3
-        ) +
-        theme_bw() +
-        labs(
-            title = paste("Feature", f),
-            x = "value"
-        )
-
-    assign(paste("p", f, sep = ""), p)
-}
-
-p1 + p2 + p3 + p4 + p5
-```
-
-```{r}
-p1 <- ggplot(data = draws_df) +
-    geom_density(
-        aes(x = values_2_1),
-        fill = "blue", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_2_2),
-        fill = "purple", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_2_3),
-        fill = "red", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_2_4),
-        fill = "yellow", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_2_5),
-        fill = "green", alpha = .1
-    ) +
-    theme_bw() +
-    labs(x = "Value", title = "Feature = 0")
-
-p2 <- ggplot(data = draws_df) +
-    geom_density(
-        aes(x = values_1_1),
-        fill = "blue", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_1_2),
-        fill = "purple", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_1_3),
-        fill = "red", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_1_4),
-        fill = "yellow", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_1_5),
-        fill = "green", alpha = .1
-    ) +
-    theme_bw() +
-    labs(x = "Value", title = "Feature = 1")
-
-p1 + p2
 ```
