@@ -51,7 +51,8 @@ reinforcement_learning <- function(alpha_pos, alpha_neg, temp, observations, cat
     }
     # response
     response <- rbinom(1, 1, prob = boot::inv.logit(temp * value_sum))
-    feedback <- ifelse(cat_one[t] == response, 1, -1)
+    feedback <- ifelse(cat_one[t] == 1, 1, -1)
+    # feedback <- cat_one[t] - boot::inv.logit(temp * value_sum)
     responses <- c(responses, response)
 
     for (f in 1:nfeatures) {
