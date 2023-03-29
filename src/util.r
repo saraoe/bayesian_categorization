@@ -5,11 +5,13 @@ binary_observations <- function(n_obs, n_features) {
     observations <- dplyr::tibble(
         f1 = sample(c(0, 1), replace = TRUE, size = n_obs)
     )
-    for (i in 2:n_features) {
-        tmp <- sample(c(0, 1), replace = TRUE, size = n_obs)
-        eval(parse(
-            text = paste("observations$f", i, " <- tmp", sep = "")
-        ))
+    if (n_features > 1) {
+        for (i in 2:n_features) {
+            tmp <- sample(c(0, 1), replace = TRUE, size = n_obs)
+            eval(parse(
+                text = paste("observations$f", i, " <- tmp", sep = "")
+            ))
+        }
     }
     return(observations)
 }
@@ -36,4 +38,3 @@ simulate_observations <- function(n_obs, n_features, type) {
         return(continuous_observations(n_obs, n_features))
     }
 }
-
