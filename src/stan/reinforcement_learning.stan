@@ -25,9 +25,9 @@ transformed data {
 
   array[ntrials] int<lower=-1, upper=1> feedback;
   for (t in 1:ntrials){
-    if (cat_one[t]==y[t]){
+    if (cat_one[t]==1){
         feedback[t] = 1;
-    } else {
+    } else if (cat_one[t]==0) {
         feedback[t] = -1;
     }
   }
@@ -61,10 +61,10 @@ transformed parameters {
             real pe = feedback[t] - values[f_val, f];
 
             real alpha;
-            if (feedback[t]==-1){
-                alpha = alpha_neg;
-            } else if (feedback[t]==1){
+            if (cat_one[t]==y[t]){
                 alpha = alpha_pos;
+            } else {
+                alpha = alpha_neg;
             }
             values[f_val, f] = values[f_val, f] + alpha*pe;  //only update value for the observed feature
         }
