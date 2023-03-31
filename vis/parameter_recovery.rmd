@@ -5,7 +5,8 @@
 library(pacman)
 pacman::p_load(
   tidyverse,
-  patchwork
+  patchwork,
+  RColorBrewer
 )
 ```
 
@@ -175,7 +176,7 @@ rm(recovery_df) # remove in case it is already defined
 for (nobs in nobservations) {
   tmp <- read_csv(
     paste("data/recovery/parameter_recovery_rl_binary",
-      nobs, "_2.csv",
+      nobs, "_1.csv",
       sep = ""
     )
   )
@@ -214,14 +215,15 @@ p <- ggplot(data = recovery_df) +
   geom_vline(aes(xintercept = true_alpha_neg), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ true_alpha_neg_round) +
-  labs(
-    title = "Prior Posterior update: Alpha_negative",
-    caption = "Prior (blue) and posterior (red)"
-  ) +
   xlab("Alpha_negative")
 
-p
-ggsave("figs/parameter_recovery/pos-prior-update-alpha-neg.png", p)
+p + labs(
+  title = "Prior Posterior update: Alpha_negative",
+  caption = "Prior (blue) and posterior (red)"
+)
+ggsave("figs/rl/parameter_recovery/pos-prior-update-alpha-neg.png", p,
+  width = 7
+)
 ```
 
 ```{r}
@@ -242,14 +244,15 @@ p <- ggplot(data = recovery_df) +
   geom_vline(aes(xintercept = true_alpha_pos), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ true_alpha_pos_round) +
-  labs(
-    title = "Prior Posterior update: Alpha_positive",
-    caption = "Prior (blue) and posterior (red)"
-  ) +
   xlab("Alpha_positive")
 
-p
-ggsave("figs/parameter_recovery/pos-prior-update-alpha-pos.png", p)
+p + labs(
+  title = "Prior Posterior update: Alpha_positive",
+  caption = "Prior (blue) and posterior (red)"
+)
+ggsave("figs/rl/parameter_recovery/pos-prior-update-alpha-pos.png", p,
+  width = 7
+)
 ```
 
 ```{r}
@@ -287,12 +290,12 @@ pos <- ggplot(data = recovery_df) +
   xlab("True Alpha") +
   ylab("Alpha Postive")
 
-p <- neg + pos +
+p <- neg + pos
+
+p +
   plot_annotation(title = "Posterior Distributions of Alphas")
-
-p
-ggsave("figs/parameter_recovery/pos-alphas.png", p,
-  width = 15, height = 10
+ggsave("figs/rl/parameter_recovery/pos-alphas.png", p,
+  width = 7, height = 5
 )
 ```
 
@@ -333,12 +336,12 @@ pos <- ggplot(data = recovery_df) +
   xlab("True Alpha") +
   ylab("Alpha Postive")
 
-p <- neg + pos +
-  plot_annotation(title = "Posterior Distributions of Alphas by Temperature")
+p <- neg + pos
 
-p
-ggsave("figs/parameter_recovery/pos-alphas_by_temp.png", p,
-  width = 15, height = 10
+p +
+  plot_annotation(title = "Posterior Distributions of Alphas by Temperature")
+ggsave("figs/rl/parameter_recovery/pos-alphas_by_temp.png", p,
+  width = 7, height = 5
 )
 ```
 
@@ -353,15 +356,15 @@ p <- ggplot(data = recovery_df) +
   ) +
   geom_vline(aes(xintercept = true_alpha_neg), linetype = "dashed") +
   theme_bw() +
+  labs(fill = "Number of observations") +
   facet_wrap(. ~ true_alpha_neg_round) +
-  labs(
-    title = "Posterior update: Alpha_negative",
-    fill = "Number of observations"
-  ) +
-  xlab("Alpha_negative")
+  xlab("Alpha_negative") +
+  scale_fill_manual(values = c("orange", "steelblue", "darkgreen"))
 
-p
-ggsave("figs/parameter_recovery/pos-alpha-neg_by_nobs.png", p)
+p + labs(title = "Posterior update: Alpha_negative")
+ggsave("figs/rl/parameter_recovery/pos-alpha-neg_by_nobs.png", p,
+  width = 7
+)
 ```
 
 ```{r}
@@ -375,15 +378,15 @@ p <- ggplot(data = recovery_df) +
   ) +
   geom_vline(aes(xintercept = true_alpha_pos), linetype = "dashed") +
   theme_bw() +
+  labs(fill = "Number of observations") +
   facet_wrap(. ~ true_alpha_pos_round) +
-  labs(
-    title = "Posterior update: Alpha_positive",
-    fill = "Number of observations"
-  ) +
-  xlab("Alpha_positive")
+  xlab("Alpha_positive") +
+  scale_fill_manual(values = c("orange", "steelblue", "darkgreen"))
 
-p
-ggsave("figs/parameter_recovery/pos-alpha-pos_by_nobs.png", p)
+p + labs(title = "Posterior update: Alpha_positive")
+ggsave("figs/rl/parameter_recovery/pos-alpha-pos_by_nobs.png", p,
+  width = 7
+)
 ```
 
 ```{r}
@@ -398,14 +401,16 @@ p <- ggplot(data = recovery_df) +
   geom_vline(aes(xintercept = true_alpha_neg), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ true_alpha_neg_round) +
-  labs(
-    title = "Posterior update: Alpha_negative",
-    fill = "Temperature"
-  ) +
-  xlab("Alpha_negative")
+  labs(fill = "Temperature") +
+  xlab("Alpha_negative") +
+  scale_fill_brewer(
+    palette = "PuOr"
+  )
 
-p
-ggsave("figs/parameter_recovery/pos-alpha-neg_by_temp.png", p)
+p + labs(title = "Posterior update: Alpha_negative")
+ggsave("figs/rl/parameter_recovery/pos-alpha-neg_by_temp.png", p,
+  width = 7
+)
 ```
 
 ```{r}
@@ -420,14 +425,16 @@ p <- ggplot(data = recovery_df) +
   geom_vline(aes(xintercept = true_alpha_pos), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ true_alpha_pos_round) +
-  labs(
-    title = "Posterior update: Alpha_positive",
-    fill = "Temperature"
-  ) +
-  xlab("Alpha_positive")
+  labs(fill = "Temperature") +
+  xlab("Alpha_positive") +
+  scale_fill_brewer(
+    palette = "PuOr"
+  )
 
-p
-ggsave("figs/parameter_recovery/pos-alpha-pos_by_temp.png", p)
+p + labs(title = "Posterior update: Alpha_positive")
+ggsave("figs/rl/parameter_recovery/pos-alpha-pos_by_temp.png", p,
+  width = 7
+)
 ```
 
 ```{r}
@@ -448,14 +455,15 @@ p <- ggplot(data = recovery_df) +
   geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ true_temp_round) +
-  labs(
-    title = "Prior Posterior update: Temperature",
-    caption = "Prior (blue) and posterior (red)"
-  ) +
   xlab("Temperature")
 
-p
-ggsave("figs/parameter_recovery/pos-prior-update-temp.png", p)
+p + labs(
+  title = "Prior Posterior update: Temperature",
+  caption = "Prior (blue) and posterior (red)"
+)
+ggsave("figs/rl/parameter_recovery/pos-prior-update-temp.png", p,
+  width = 7
+)
 ```
 
 ```{r}
@@ -470,14 +478,14 @@ p <- ggplot(data = recovery_df) +
   geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ true_temp_round) +
-  labs(
-    title = "Posterior update: Temperature",
-    fill = "Number of observations"
-  ) +
-  xlab("Temperature")
+  labs(fill = "Number of observations") +
+  xlab("Temperature") +
+  scale_fill_manual(values = c("orange", "steelblue", "darkgreen"))
 
-p
-ggsave("figs/parameter_recovery/pos-temp_by_nobs.png", p)
+p + labs(title = "Posterior update: Temperature")
+ggsave("figs/rl/parameter_recovery/pos-temp_by_nobs.png", p,
+  width = 7
+)
 ```
 
 ```{r}
@@ -496,11 +504,12 @@ p <- ggplot(data = recovery_df) +
   ) +
   theme_bw() +
   xlab("True Temperature") +
-  ylab("Temperature") +
-  labs(title = "Posterior Distributions of Temperature")
+  ylab("Temperature")
 
-p
-ggsave("figs/parameter_recovery/pos-temp.png", p)
+p + labs(title = "Posterior Distributions of Temperature")
+ggsave("figs/rl/parameter_recovery/pos-temp.png", p,
+  width = 7, height = 5
+)
 ```
 
 ```{r}
@@ -520,12 +529,36 @@ p <- ggplot(data = recovery_df) +
   theme_bw() +
   facet_wrap(. ~ true_alpha_neg_round) +
   xlab("True Temperature") +
-  ylab("Temperature") +
-  labs(title = "Posterior Distributions of Temperature by Alpha negative")
+  ylab("Temperature")
 
-p
-ggsave("figs/parameter_recovery/pos-temp_by_alpha_neg.png", p,
-  width = 10, height = 10
+p + labs(title = "Posterior Distributions of Temperature by Alpha negative")
+ggsave("figs/rl/parameter_recovery/pos-temp_by_alpha_neg.png", p,
+  width = 7, height = 5
+)
+```
+
+```{r}
+p <- ggplot(data = recovery_df) +
+  geom_violin(
+    aes(x = as.factor(true_temp_round), y = temp),
+    fill = "red", alpha = 0.3
+  ) +
+  geom_boxplot(
+    aes(x = as.factor(true_temp_round), y = temp),
+    width = 0.1
+  ) +
+  geom_line(
+    aes(x = as.factor(true_temp_round), y = true_temp, group = 1),
+    linetype = "dashed"
+  ) +
+  theme_bw() +
+  facet_wrap(. ~ true_alpha_pos_round) +
+  xlab("True Temperature") +
+  ylab("Temperature")
+
+p + labs(title = "Posterior Distributions of Temperature by Alpha positive")
+ggsave("figs/rl/parameter_recovery/pos-temp_by_alpha_pos.png", p,
+  width = 7, height = 5
 )
 ```
 
@@ -577,14 +610,15 @@ p <- ggplot(data = recovery_df) +
   geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ true_alpha_round) +
-  labs(
-    title = "Prior Posterior update: Alpha",
-    caption = "Prior (blue) and posterior (red)"
-  ) +
   xlab("Alpha")
 
-p
-ggsave("figs/parameter_recovery/rlsimple_pos-prior-update-alpha.png", p)
+p + labs(
+  title = "Prior Posterior update: Alpha",
+  caption = "Prior (blue) and posterior (red)"
+)
+ggsave("figs/rl_simple/parameter_recovery/pos-prior-update-alpha.png", p,
+  width = 7
+)
 ```
 
 ```{r}
@@ -605,9 +639,9 @@ p <- ggplot(data = recovery_df) +
   xlab("True Alpha") +
   ylab("Alpha")
 
-p
-ggsave("figs/parameter_recovery/rlsimple_pos-alpha.png", p,
-  width = 15, height = 10
+p + labs(title = "Posterior Distribution of Alpha")
+ggsave("figs/rl_simple/parameter_recovery/pos-alpha.png", p,
+  width = 7, height = 5
 )
 ```
 
@@ -630,9 +664,9 @@ p <- ggplot(data = recovery_df) +
   xlab("True Alpha") +
   ylab("Alpha")
 
-p
-ggsave("figs/parameter_recovery/rlsimple_pos-alphas_by_temp.png", p,
-  width = 15, height = 10
+p + labs(title = "Posterior Distribution of Alpha by Temperature")
+ggsave("figs/rl_simple/parameter_recovery/pos-alphas_by_temp.png", p,
+  width = 7, height = 5
 )
 ```
 
@@ -647,15 +681,15 @@ p <- ggplot(data = recovery_df) +
   ) +
   geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
   theme_bw() +
+  labs(fill = "Number of observations") +
   facet_wrap(. ~ true_alpha_round) +
-  labs(
-    title = "Posterior update: Alpha",
-    fill = "Number of observations"
-  ) +
-  xlab("Alpha")
+  xlab("Alpha") +
+  scale_fill_manual(values = c("orange", "steelblue", "darkgreen"))
 
-p
-ggsave("figs/parameter_recovery/rlsimple_pos-alpha-neg_by_nobs.png", p)
+p + labs(title = "Posterior update: Alpha")
+ggsave("figs/rl_simple/parameter_recovery/pos-alpha_by_nobs.png", p,
+  width = 7
+)
 ```
 
 ```{r}
@@ -670,14 +704,16 @@ p <- ggplot(data = recovery_df) +
   geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ true_alpha_round) +
-  labs(
-    title = "Posterior update: Alpha",
-    fill = "Temperature"
-  ) +
-  xlab("Alpha")
+  labs(fill = "Temperature") +
+  xlab("Alpha") +
+  scale_fill_brewer(
+    palette = "PuOr"
+  )
 
-p
-ggsave("figs/parameter_recovery/rlsimple_pos-alpha-neg_by_temp.png", p)
+p + labs(title = "Posterior update: Alpha")
+ggsave("figs/rl_simple/parameter_recovery/pos-alpha_by_temp.png", p,
+  width = 7
+)
 ```
 
 ```{r}
@@ -698,14 +734,15 @@ p <- ggplot(data = recovery_df) +
   geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ true_temp_round) +
-  labs(
-    title = "Prior Posterior update: Temperature",
-    caption = "Prior (blue) and posterior (red)"
-  ) +
   xlab("Temperature")
 
-p
-ggsave("figs/parameter_recovery/rlsimple_pos-prior-update-temp.png", p)
+p + labs(
+  title = "Prior Posterior update: Temperature",
+  caption = "Prior (blue) and posterior (red)"
+)
+ggsave("figs/rl_simple/parameter_recovery/pos-prior-update-temp.png", p,
+  width = 7
+)
 ```
 
 ```{r}
@@ -720,14 +757,14 @@ p <- ggplot(data = recovery_df) +
   geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ true_temp_round) +
-  labs(
-    title = "Posterior update: Temperature",
-    fill = "Number of observations"
-  ) +
-  xlab("Temperature")
+  labs(fill = "Number of observations") +
+  xlab("Temperature") +
+  scale_fill_manual(values = c("orange", "steelblue", "darkgreen"))
 
-p
-ggsave("figs/parameter_recovery/rlsimple_pos-temp_by_nobs.png", p)
+p + labs(title = "Posterior update: Temperature")
+ggsave("figs/rl_simple/parameter_recovery/pos-temp_by_nobs.png", p,
+  width = 7
+)
 ```
 
 ```{r}
@@ -746,11 +783,12 @@ p <- ggplot(data = recovery_df) +
   ) +
   theme_bw() +
   xlab("True Temperature") +
-  ylab("Temperature") +
-  labs(title = "Posterior Distributions of Temperature")
+  ylab("Temperature")
 
-p
-ggsave("figs/parameter_recovery/rlsimple_pos-temp.png", p)
+p + labs(title = "Posterior Distributions of Temperature")
+ggsave("figs/rl_simple/parameter_recovery/pos-temp.png", p,
+  width = 7, height = 5
+)
 ```
 
 ```{r}
@@ -770,11 +808,10 @@ p <- ggplot(data = recovery_df) +
   theme_bw() +
   facet_wrap(. ~ true_alpha_round) +
   xlab("True Temperature") +
-  ylab("Temperature") +
-  labs(title = "Posterior Distributions of Temperature by Alpha")
+  ylab("Temperature")
 
-p
-ggsave("figs/parameter_recovery/rlsimple_pos-temp_by_alpha.png", p,
-  width = 10, height = 10
+p + labs(title = "Posterior Distributions of Temperature by Alpha")
+ggsave("figs/rl_simple/parameter_recovery/pos-temp_by_alpha.png", p,
+  width = 7, height = 5
 )
 ```
