@@ -108,7 +108,7 @@ generated quantities {
     
     }
    priorpred = bernoulli_rng(theta_prior);
-      array[ntrials] int<lower=0, upper=1> priorcorrect;
+   array[ntrials] int<lower=0, upper=1> priorcorrect;
    for (i in 1:ntrials) {
         if (priorpred[i] == cat_one[i]) {
             priorcorrect[i] = 1;

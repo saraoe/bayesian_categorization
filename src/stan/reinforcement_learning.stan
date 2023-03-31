@@ -114,10 +114,10 @@ generated quantities {
 
             pe = feedback[t] - values_prior[f_val, f];
 
-            if (feedback[t]==-1){
-                alpha = alpha_neg_prior;
-            } else if (feedback[t]==1){
+            if (feedback[t]==cat_one[t]){
                 alpha = alpha_pos_prior;
+            } else {
+                alpha = alpha_neg_prior;
             }
             values_prior[f_val, f] = values_prior[f_val, f] + alpha*pe;  //only update value for the observed feature
         }
