@@ -359,7 +359,7 @@ p <- ggplot(data = recovery_df) +
   labs(fill = "Number of observations") +
   facet_wrap(. ~ true_alpha_neg_round) +
   xlab("Alpha_negative") +
-  scale_fill_manual(values = c("orange", "steelblue", "darkgreen"))
+  scale_fill_manual(values = c("brown", "steelblue", "darkgreen"))
 
 p + labs(title = "Posterior update: Alpha_negative")
 ggsave("figs/rl/parameter_recovery/pos-alpha-neg_by_nobs.png", p,
@@ -381,7 +381,7 @@ p <- ggplot(data = recovery_df) +
   labs(fill = "Number of observations") +
   facet_wrap(. ~ true_alpha_pos_round) +
   xlab("Alpha_positive") +
-  scale_fill_manual(values = c("orange", "steelblue", "darkgreen"))
+  scale_fill_manual(values = c("brown", "steelblue", "darkgreen"))
 
 p + labs(title = "Posterior update: Alpha_positive")
 ggsave("figs/rl/parameter_recovery/pos-alpha-pos_by_nobs.png", p,
@@ -480,7 +480,7 @@ p <- ggplot(data = recovery_df) +
   facet_wrap(. ~ true_temp_round) +
   labs(fill = "Number of observations") +
   xlab("Temperature") +
-  scale_fill_manual(values = c("orange", "steelblue", "darkgreen"))
+  scale_fill_manual(values = c("brown", "steelblue", "darkgreen"))
 
 p + labs(title = "Posterior update: Temperature")
 ggsave("figs/rl/parameter_recovery/pos-temp_by_nobs.png", p,
@@ -684,7 +684,7 @@ p <- ggplot(data = recovery_df) +
   labs(fill = "Number of observations") +
   facet_wrap(. ~ true_alpha_round) +
   xlab("Alpha") +
-  scale_fill_manual(values = c("orange", "steelblue", "darkgreen"))
+  scale_fill_manual(values = c("brown", "steelblue", "darkgreen"))
 
 p + labs(title = "Posterior update: Alpha")
 ggsave("figs/rl_simple/parameter_recovery/pos-alpha_by_nobs.png", p,
@@ -759,7 +759,7 @@ p <- ggplot(data = recovery_df) +
   facet_wrap(. ~ true_temp_round) +
   labs(fill = "Number of observations") +
   xlab("Temperature") +
-  scale_fill_manual(values = c("orange", "steelblue", "darkgreen"))
+  scale_fill_manual(values = c("brown", "steelblue", "darkgreen"))
 
 p + labs(title = "Posterior update: Temperature")
 ggsave("figs/rl_simple/parameter_recovery/pos-temp_by_nobs.png", p,
