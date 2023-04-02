@@ -11,10 +11,10 @@ pacman::p_load(
 ```{r}
 # emperical data
 aliendata <- read_csv("data/AlienData.csv") %>%
-                filter(session == 1) %>%
-                mutate(
-                    subject = ifelse(condition == 2, subject + 100, subject)
-                )
+    filter(session == 1) %>%
+    mutate(
+        subject = ifelse(condition == 2, subject + 100, subject)
+    )
 ```
 
 ## GCM
@@ -194,11 +194,12 @@ p <- ggplot(data = draws_df) +
     xlab("Alpha_negative")
 
 p + labs(
-        title = "Prior Posterior update: Alpha_negative",
-        caption = "Prior (blue) and posterior (red)"
-    )
+    title = "Prior Posterior update: Alpha_negative",
+    caption = "Prior (blue) and posterior (red)"
+)
 ggsave("figs/rl/prior-pos-update-alphaneg.png", p,
-       width = 7)
+    width = 7
+)
 ```
 
 ```{r}
@@ -210,11 +211,12 @@ p <- ggplot(data = draws_df) +
     xlab("Alpha_negative")
 
 p + labs(
-        title = "Prior Posterior update: Alpha_negative",
-        caption = "Prior (blue) and posterior (red)"
-    )
+    title = "Prior Posterior update: Alpha_negative",
+    caption = "Prior (blue) and posterior (red)"
+)
 ggsave("figs/rl/prior-pos-update-alphaneg-condition.png", p,
-       width = 7)
+    width = 7
+)
 ```
 
 ```{r}
@@ -237,11 +239,12 @@ p <- ggplot(data = draws_df) +
     xlab("Alpha_positive")
 
 p + labs(
-        title = "Prior Posterior update: Alpha_positive",
-        caption = "Prior (blue) and posterior (red)"
-    ) 
+    title = "Prior Posterior update: Alpha_positive",
+    caption = "Prior (blue) and posterior (red)"
+)
 ggsave("figs/rl/prior-pos-update-alphapos.png", p,
-       width = 7)
+    width = 7
+)
 ```
 
 ```{r}
@@ -253,11 +256,12 @@ p <- ggplot(data = draws_df) +
     xlab("Alpha_positive")
 
 p + labs(
-        title = "Prior Posterior update: Alpha_positive",
-        caption = "Prior (blue) and posterior (red)"
-    ) 
+    title = "Prior Posterior update: Alpha_positive",
+    caption = "Prior (blue) and posterior (red)"
+)
 ggsave("figs/rl/prior-pos-update-alphapos-condition.png", p,
-       width = 7)
+    width = 7
+)
 ```
 
 Temperature
@@ -281,11 +285,12 @@ p <- ggplot(data = draws_df) +
     xlab("Temperature")
 
 p + labs(
-        title = "Prior Posterior update: Temperature",
-        caption = "Prior (blue) and posterior (red)"
-    )
+    title = "Prior Posterior update: Temperature",
+    caption = "Prior (blue) and posterior (red)"
+)
 ggsave("figs/rl/prior-pos-update-temp.png", p,
-       width = 7)
+    width = 7
+)
 ```
 
 ```{r}
@@ -297,11 +302,12 @@ p <- ggplot(data = draws_df) +
     xlab("Temperature")
 
 p + labs(
-        title = "Prior Posterior update: Temperature",
-        caption = "Prior (blue) and posterior (red)"
-    )
+    title = "Prior Posterior update: Temperature",
+    caption = "Prior (blue) and posterior (red)"
+)
 ggsave("figs/rl/prior-pos-update-temp-condition.png", p,
-       width = 7)
+    width = 7
+)
 ```
 
 Values
@@ -538,29 +544,29 @@ for (t in 1:104) {
 
 ```{r}
 posteriorcorrect <- posteriorcorrect %>%
-                    mutate(
-                        condition = as.factor(condition),
-                        subject = as.factor(subject),
-                        type = "estimated"
-                    ) %>%
-                    group_by(subject) %>%
-                    mutate(
-                        cumulative = cumsum(correct) / trial
-                    )
+    mutate(
+        condition = as.factor(condition),
+        subject = as.factor(subject),
+        type = "estimated"
+    ) %>%
+    group_by(subject) %>%
+    mutate(
+        cumulative = cumsum(correct) / trial
+    )
 
 real_correct <- aliendata %>%
-                select(c(condition, subject, correct, trial)) %>%
-                mutate(
-                    condition = as.factor(condition),
-                    subject = as.factor(subject),
-                    sd = 0,
-                    type = "real",
-                    cumulative = cumsum(correct) / trial
-                ) %>% 
-                group_by(subject) %>%
-                mutate(
-                    cumulative = cumsum(correct) / trial
-                )
+    select(c(condition, subject, correct, trial)) %>%
+    mutate(
+        condition = as.factor(condition),
+        subject = as.factor(subject),
+        sd = 0,
+        type = "real",
+        cumulative = cumsum(correct) / trial
+    ) %>%
+    group_by(subject) %>%
+    mutate(
+        cumulative = cumsum(correct) / trial
+    )
 
 posteriorcorrect <- rbind(posteriorcorrect, real_correct)
 ```
@@ -569,14 +575,16 @@ posteriorcorrect <- rbind(posteriorcorrect, real_correct)
 ggplot(data = posteriorcorrect) +
     geom_point(aes(x = trial, y = correct, color = type)) +
     geom_smooth(aes(x = trial, y = correct, color = type)) +
-    theme_bw() + facet_wrap(. ~ subject) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
     scale_color_manual(values = c("orange", "purple"))
 
 ggplot(data = posteriorcorrect) +
     geom_point(aes(x = trial, y = correct, color = type)) +
     geom_smooth(aes(x = trial, y = correct, color = type)) +
     geom_vline(aes(xintercept = 96), linetype = "dashed") +
-    theme_bw() + facet_wrap(. ~ condition) +
+    theme_bw() +
+    facet_wrap(. ~ condition) +
     scale_color_manual(values = c("orange", "purple"))
 ```
 
@@ -584,15 +592,18 @@ ggplot(data = posteriorcorrect) +
 ggplot(data = posteriorcorrect) +
     geom_point(aes(x = trial, y = cumulative, color = type)) +
     geom_line(aes(x = trial, y = cumulative, color = type)) +
-    theme_bw() + facet_wrap(. ~ subject) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
     scale_color_manual(values = c("orange", "purple"))
 
 ggplot(data = posteriorcorrect) +
     geom_point(aes(x = trial, y = cumulative, color = type),
-               alpha = .2) +
+        alpha = .2
+    ) +
     geom_smooth(aes(x = trial, y = cumulative, color = type)) +
     geom_vline(aes(xintercept = 96), linetype = "dashed") +
-    theme_bw() + facet_wrap(. ~ condition) +
+    theme_bw() +
+    facet_wrap(. ~ condition) +
     scale_color_manual(values = c("orange", "purple"))
 ```
 
@@ -704,7 +715,7 @@ ggplot(data = draws_df) +
     ) +
     xlab("Alpha")
 
-ggsave("figs/rl_simple/prior-pos-update-alpha.png")
+ggsave("figs/rl_simple/prior-pos-update-alpha.png", width = 7)
 ```
 
 ```{r}
@@ -719,7 +730,7 @@ ggplot(data = draws_df) +
     ) +
     xlab("Alpha")
 
-ggsave("figs/rl_simple/prior-pos-update-alpha-condtion.png")
+ggsave("figs/rl_simple/prior-pos-update-alpha-condtion.png", width = 7)
 ```
 
 Temperature
@@ -746,7 +757,7 @@ ggplot(data = draws_df) +
     ) +
     xlab("Temperature")
 
-ggsave("figs/rl_simple/prior-pos-update-temp.png")
+ggsave("figs/rl_simple/prior-pos-update-temp.png", width = 7)
 ```
 
 ```{r}
@@ -761,7 +772,7 @@ ggplot(data = draws_df) +
     ) +
     xlab("Temperature")
 
-ggsave("figs/rl_simple/prior-pos-update-temp-condition.png")
+ggsave("figs/rl_simple/prior-pos-update-temp-condition.png", width = 7)
 ```
 
 Posterior predictions
@@ -797,29 +808,29 @@ for (t in 1:104) {
 
 ```{r}
 posteriorcorrect <- posteriorcorrect %>%
-                    mutate(
-                        condition = as.factor(condition),
-                        subject = as.factor(subject),
-                        type = "estimated"
-                    ) %>%
-                    group_by(subject) %>%
-                    mutate(
-                        cumulative = cumsum(correct) / trial
-                    )
+    mutate(
+        condition = as.factor(condition),
+        subject = as.factor(subject),
+        type = "estimated"
+    ) %>%
+    group_by(subject) %>%
+    mutate(
+        cumulative = cumsum(correct) / trial
+    )
 
 real_correct <- aliendata %>%
-                select(c(condition, subject, correct, trial)) %>%
-                mutate(
-                    condition = as.factor(condition),
-                    subject = as.factor(subject),
-                    sd = 0,
-                    type = "real",
-                    cumulative = cumsum(correct) / trial
-                ) %>% 
-                group_by(subject) %>%
-                mutate(
-                    cumulative = cumsum(correct) / trial
-                )
+    select(c(condition, subject, correct, trial)) %>%
+    mutate(
+        condition = as.factor(condition),
+        subject = as.factor(subject),
+        sd = 0,
+        type = "real",
+        cumulative = cumsum(correct) / trial
+    ) %>%
+    group_by(subject) %>%
+    mutate(
+        cumulative = cumsum(correct) / trial
+    )
 
 posteriorcorrect <- rbind(posteriorcorrect, real_correct)
 ```
@@ -828,14 +839,16 @@ posteriorcorrect <- rbind(posteriorcorrect, real_correct)
 ggplot(data = posteriorcorrect) +
     geom_point(aes(x = trial, y = correct, color = type)) +
     geom_smooth(aes(x = trial, y = correct, color = type)) +
-    theme_bw() + facet_wrap(. ~ subject) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
     scale_color_manual(values = c("orange", "purple"))
 
 ggplot(data = posteriorcorrect) +
     geom_point(aes(x = trial, y = correct, color = type)) +
     geom_smooth(aes(x = trial, y = correct, color = type)) +
     geom_vline(aes(xintercept = 96), linetype = "dashed") +
-    theme_bw() + facet_wrap(. ~ condition) +
+    theme_bw() +
+    facet_wrap(. ~ condition) +
     scale_color_manual(values = c("orange", "purple"))
 ```
 
@@ -843,14 +856,17 @@ ggplot(data = posteriorcorrect) +
 ggplot(data = posteriorcorrect) +
     geom_point(aes(x = trial, y = cumulative, color = type)) +
     geom_line(aes(x = trial, y = cumulative, color = type)) +
-    theme_bw() + facet_wrap(. ~ subject) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
     scale_color_manual(values = c("orange", "purple"))
 
 ggplot(data = posteriorcorrect) +
     geom_point(aes(x = trial, y = cumulative, color = type),
-               alpha = .2) +
+        alpha = .2
+    ) +
     geom_smooth(aes(x = trial, y = cumulative, color = type)) +
     geom_vline(aes(xintercept = 96), linetype = "dashed") +
-    theme_bw() + facet_wrap(. ~ condition) +
+    theme_bw() +
+    facet_wrap(. ~ condition) +
     scale_color_manual(values = c("orange", "purple"))
 ```
