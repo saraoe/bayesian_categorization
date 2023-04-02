@@ -8,17 +8,20 @@ pacman::p_load(
 )
 ```
 
-## GCM
-
-## Reinforcement Learning (assymetrical)
-### load data
 ```{r}
+# emperical data
 aliendata <- read_csv("data/AlienData.csv") %>%
                 filter(session == 1) %>%
                 mutate(
                     subject = ifelse(condition == 2, subject + 100, subject)
                 )
+```
 
+## GCM
+
+## Reinforcement Learning (assymetrical)
+### load data
+```{r}
 draws_df <- read_csv("data/rl_samples.csv")
 
 # update colnames
@@ -759,4 +762,95 @@ ggplot(data = draws_df) +
     xlab("Temperature")
 
 ggsave("figs/rl_simple/prior-pos-update-temp-condition.png")
+```
+
+Posterior predictions
+```{r}
+rm(posteriorcorrect)
+
+for (t in 1:104) {
+    for (s in unique(draws_df$subject)) {
+        tmp_draws <- draws_df %>%
+            filter(subject == s)
+        col <- paste("tmp_draws$posteriorcorrect_", t, sep = "")
+        colvalues <- eval(parse(text = col))
+        mean_correct <- mean(colvalues)
+        sd_correct <- sd(colvalues)
+        tmp <- tibble(
+            correct = mean_correct,
+            sd = sd_correct,
+            trial = t,
+            condition = unique(tmp_draws$condition),
+            subject = s
+        )
+
+        if (exists("posteriorcorrect")) {
+            posteriorcorrect <- rbind(
+                posteriorcorrect, tmp
+            )
+        } else {
+            posteriorcorrect <- tmp
+        }
+    }
+}
+```
+
+```{r}
+posteriorcorrect <- posteriorcorrect %>%
+                    mutate(
+                        condition = as.factor(condition),
+                        subject = as.factor(subject),
+                        type = "estimated"
+                    ) %>%
+                    group_by(subject) %>%
+                    mutate(
+                        cumulative = cumsum(correct) / trial
+                    )
+
+real_correct <- aliendata %>%
+                select(c(condition, subject, correct, trial)) %>%
+                mutate(
+                    condition = as.factor(condition),
+                    subject = as.factor(subject),
+                    sd = 0,
+                    type = "real",
+                    cumulative = cumsum(correct) / trial
+                ) %>% 
+                group_by(subject) %>%
+                mutate(
+                    cumulative = cumsum(correct) / trial
+                )
+
+posteriorcorrect <- rbind(posteriorcorrect, real_correct)
+```
+
+```{r}
+ggplot(data = posteriorcorrect) +
+    geom_point(aes(x = trial, y = correct, color = type)) +
+    geom_smooth(aes(x = trial, y = correct, color = type)) +
+    theme_bw() + facet_wrap(. ~ subject) +
+    scale_color_manual(values = c("orange", "purple"))
+
+ggplot(data = posteriorcorrect) +
+    geom_point(aes(x = trial, y = correct, color = type)) +
+    geom_smooth(aes(x = trial, y = correct, color = type)) +
+    geom_vline(aes(xintercept = 96), linetype = "dashed") +
+    theme_bw() + facet_wrap(. ~ condition) +
+    scale_color_manual(values = c("orange", "purple"))
+```
+
+```{r}
+ggplot(data = posteriorcorrect) +
+    geom_point(aes(x = trial, y = cumulative, color = type)) +
+    geom_line(aes(x = trial, y = cumulative, color = type)) +
+    theme_bw() + facet_wrap(. ~ subject) +
+    scale_color_manual(values = c("orange", "purple"))
+
+ggplot(data = posteriorcorrect) +
+    geom_point(aes(x = trial, y = cumulative, color = type),
+               alpha = .2) +
+    geom_smooth(aes(x = trial, y = cumulative, color = type)) +
+    geom_vline(aes(xintercept = 96), linetype = "dashed") +
+    theme_bw() + facet_wrap(. ~ condition) +
+    scale_color_manual(values = c("orange", "purple"))
 ```
