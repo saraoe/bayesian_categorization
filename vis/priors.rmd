@@ -57,8 +57,10 @@ tibble(
         probability = boot::inv.logit(temperature * value)
     ) %>%
     ggplot() +
-    geom_line(aes(x = value, y = probability,
-                  group = temperature, color = temperature)) +
+    geom_line(aes(
+        x = value, y = probability,
+        group = temperature, color = temperature
+    )) +
     theme_classic() +
     scale_color_distiller(palette = "PuOr") +
     labs(
