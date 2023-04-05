@@ -14,7 +14,7 @@ pacman::p_load(
 ### load data
 ```{r}
 types <- c("binary")
-nobservations <- c(104)
+nobservations <- c(104, 208)
 
 rm(recovery_df) # remove in case it is already defined
 # read df
@@ -22,7 +22,7 @@ for (nobs in nobservations) {
   for (type in types) {
     tmp <- read_csv(
       paste("data/recovery/parameter_recovery_gcm_",
-        type, nobs, "_1.csv",
+        type, nobs, "_1_bound2.csv",
         sep = ""
       )
     )
@@ -92,7 +92,7 @@ for (c_param in c_parameters) {
     tmp <- recovery_df %>%
       filter(c_parameter == c_param & w_parameter == w_params) %>%
       pivot_longer(
-        c("w[1]", "w[2]", "w[3]", "w[4]", "w[5]"),
+        c("w_1", "w_2", "w_3", "w_4", "w_5"),
         names_to = "features", values_to = "weights"
       ) %>%
       mutate(feature_number = str_extract(features, "\\d+")) %>%
@@ -127,14 +127,15 @@ weights_draws_df %>%
 ggplot(data = weights_draws_df) +
   geom_density(
     aes(
-      x = weights, fill = w_param_cond,
-      color = w_param_cond
+      x = weights, fill = w_param_cond
     ),
     alpha = .2
   ) +
   geom_vline(aes(xintercept = w_parameter, color = w_param_cond), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ feature_number) +
+  scale_fill_manual(values = c("orange", "purple")) +
+  scale_color_manual(values = c("orange", "purple")) +
   labs(
     title = "Posterior for W parameter",
     color = "W parameters",
@@ -150,14 +151,14 @@ weights_draws_df %>%
   ggplot() +
   geom_density(
     aes(
-      x = weights, fill = as.character(c_parameter),
-      color = as.character(c_parameter)
+      x = weights, fill = as.character(c_parameter)
     ),
-    alpha = .2
+    alpha = .4
   ) +
   geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ feature_number) +
+  scale_fill_brewer(palette = "PuOr") +
   labs(
     title = "Posterior for W parameter",
     subtitle = paste("filtered by w-parameter:", filter_w_param),

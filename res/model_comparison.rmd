@@ -1,0 +1,123 @@
+# Model comparison
+```{r}
+# libraries
+library(pacman)
+pacman::p_load(
+    tidyverse
+)
+```
+
+```{r}
+# load data
+ntrials <- 104
+relevant_cols <- c(
+    "subject", "condition", "session"
+)
+for (n in seq_len(ntrials)) {
+    relevant_cols <- c(
+        relevant_cols,
+        paste("log_lik[", n, "]", sep = "")
+    )
+}
+
+rl_assym <- read_csv("data/rl_samples.csv") %>%
+    select(relevant_cols) %>%
+    mutate(
+        model = "rl_assym"
+    )
+rl_simple <- read_csv("data/rl_simple_samples.csv") %>%
+    select(relevant_cols) %>%
+    mutate(
+        model = "rl_simple"
+    )
+
+df <- rbind(rl_assym, rl_simple)
+
+rm(rl_assym, rl_simple)
+```
+
+Log likelihood
+```{r}
+mean_log_lik <- df %>%
+    group_by(
+        subject,
+        session,
+        condition,
+        model
+    ) %>%
+    summarise(
+        across(everything(),
+        list(mean))
+        ) %>%
+    gather(
+        key = "trial",
+        value = "log_lik",
+        'log_lik[1]_1':'log_lik[104]_1'
+    )
+
+sd_log_lik <- df %>%
+    group_by(
+        subject,
+        session,
+        condition,
+        model
+    ) %>%
+    summarise(
+        across(everything(),
+        list(sd))
+        ) %>%
+    gather(
+        key = "trial",
+        value = "sd",
+        'log_lik[1]_1':'log_lik[104]_1'
+    )
+
+log_lik_df <- merge(mean_log_lik, sd_log_lik) %>%
+    mutate(
+        trial = as.factor(str_extract(trial, "\\d+"))
+    )
+
+rm(mean_log_lik, sd_log_lik)
+```
+
+```{r}
+log_lik_df %>%
+    group_by(condition, session, model) %>%
+    summarize(
+        mean_log_lik = mean(log_lik),
+        sd = mean(sd)
+    )
+```
+
+```{r}
+ggplot(data = log_lik_df) +
+    geom_density(
+        aes(x = log_lik, fill = model),
+        alpha = .5) +
+    theme_bw() +
+    facet_wrap(session ~ condition) +
+    scale_fill_manual(values = c("orange", "purple"))
+```
+
+```{r}
+ggplot(data = log_lik_df) +
+    geom_point(
+        aes(
+            x = trial, y = log_lik,
+            color = model
+            ),
+        position = position_dodge(0.05)) +
+    geom_errorbar(
+        aes(
+            x = trial,
+            ymin = log_lik - sd,
+            ymax = log_lik + sd,
+            color = model
+            ),
+            width = .2,
+            position = position_dodge(0.05)
+        ) +
+    theme_bw() +
+    facet_wrap(. ~ subject) +
+    scale_color_manual(values = c("orange", "purple"))
+```

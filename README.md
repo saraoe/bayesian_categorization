@@ -13,7 +13,7 @@ The ability to form categories is essential for understanding external input and
 │   ├── parallel_pr.sh  <- parameter recovery
 │   ├── fit_models.sh   <- fit models to data
 │   └── ... 
-├── vis                 <- rmd-files for visualizations
+├── res                 <- rmd-files for results and plots
 ├── figs                <- figures
 ````
 
