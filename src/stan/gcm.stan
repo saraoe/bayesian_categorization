@@ -154,5 +154,13 @@ generated quantities {
 
     // posterior pred
     array[ntrials] int<lower=0, upper=1> posteriorpred = bernoulli_rng(r);
+    
+    
+    // log likelihood
+   array[ntrials] real log_lik;
+
+   for (i in 1:ntrials) {
+        log_lik[i] = bernoulli_lpmf(y[i] | r[i]);
+   }
 
 }
