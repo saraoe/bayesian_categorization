@@ -188,7 +188,6 @@ compare <- loo_compare(gcm_loo, rl_loo, rl_simple_loo)
 print(compare)
 
 compare <- as.data.frame(compare)
-compare$model <- c("gcm", "rl", "rl_simple")
 compare$true_model <- true_model
 compare$index <- index
 output_path <- paste(
