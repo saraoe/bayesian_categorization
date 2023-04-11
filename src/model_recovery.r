@@ -31,7 +31,7 @@ seed <- sample(c(1:1000000), 1)
 set.seed(seed)
 
 print("--------------")
-print(paste("Running true", model, "with:"))
+print(paste("Running true", true_model, "with:"))
 print(paste("Index =", index))
 print(paste("N observations = ", n_obs))
 print(paste("Seed =", seed))
@@ -48,7 +48,7 @@ danger <- ifelse(observations$f1 == 1 & observations$f2 == 1, 1, 0)
 ## Parameters and Simulate responses ##
 print("True parameters:")
 if (true_model == "gcm") {
-    c <- runif(min = 0.1, max = 2)
+    c <- runif(1, min = 0.1, max = 2)
     print(paste("c =", c))
     w <- rep(1 / 5, 5)
     print(paste("w =", w))
@@ -61,11 +61,11 @@ if (true_model == "gcm") {
         cat_one = danger
     )
 } else if (true_model == "rl") {
-    alpha_pos <- runif(min = 0.1, max = 0.5)
+    alpha_pos <- runif(1, min = 0.1, max = 0.5)
     print(paste("alpha_pos =", alpha_pos))
-    alpha_neg <- runif(min = 0.5, max = 0.9)
+    alpha_neg <- runif(1, min = 0.5, max = 0.9)
     print(paste("alpha_neg =", alpha_neg))
-    temp <- runif(min = 0.1, max = 5)
+    temp <- runif(1, min = 0.1, max = 5)
     print(paste("temperature =", temp))
 
     responses <- reinforcement_learning(
@@ -76,9 +76,9 @@ if (true_model == "gcm") {
         cat_one = danger
     )
 } else if (true_model == "rl_simple") {
-    alpha <- runif(min = 0.1, max = 0.9)
+    alpha <- runif(1, min = 0.1, max = 0.9)
     print(paste("alpha =", alpha))
-    temp <- runif(min = 0.1, max = 5)
+    temp <- runif(1, min = 0.1, max = 5)
     print(paste("temperature =", temp))
 
     responses <- reinforcement_learning(
@@ -95,7 +95,7 @@ print("--------------")
 ## Load and Fit Models ##
 
 for (model in c("gcm", "rl", "rl_simple")) {
-    print("Now fitting", model)
+    print(paste("Now fitting", model))
 
     # compile model
     set_cmdstan_path("/work/MA_thesis/cmdstan-2.31.0")
@@ -106,13 +106,17 @@ for (model in c("gcm", "rl", "rl_simple")) {
     } else if (model == "rl_simple") {
         file <- file.path("src/stan/reinforcement_learning_simple.stan")
     }
+    mod <- cmdstan_model(
+        file,
+        cpp_options = list(stan_threads = TRUE)
+    )
 
     if (model == "gcm") {
         data <- list(
             ntrials = nrow(observations),
             nfeatures = ncol(observations),
             cat_one = danger,
-            y = response,
+            y = responses,
             obs = as.matrix(observations),
             b = .5, # no bias
             w_prior_values = rep(1, 5),
@@ -156,9 +160,9 @@ for (model in c("gcm", "rl", "rl_simple")) {
 
     # loo
     samples_loo <- samples$loo(save_psis = TRUE, cores = 4)
-    assign(paste(model, "_loo", sep = "", samples_loo))
+    assign(paste(model, "_loo", sep = ""), samples_loo)
 
-    tmp <- as.data.frame(samples_loo$point_wise)
+    tmp <- as.data.frame(samples_loo$pointwise)
     tmp$model <- model
     tmp$index <- index
     tmp$true_model <- true_model
@@ -172,7 +176,7 @@ for (model in c("gcm", "rl", "rl_simple")) {
 ### Save LOO Output ###
 print("--------------")
 output_path <- paste(
-    "data/recovery/model_recovery_loo_pointwise",
+    "data/recovery/model_recovery_loo_pointwise_",
     true_model, "_", index, ".csv",
     sep = ""
 )
