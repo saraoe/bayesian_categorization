@@ -56,6 +56,7 @@ if (true_model == "gcm") {
     responses <- gcm(
         w = w,
         c = c,
+        b = 0.5,
         ntrials = n_obs,
         obs = observations,
         cat_one = danger
