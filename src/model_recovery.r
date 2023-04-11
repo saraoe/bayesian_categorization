@@ -196,7 +196,7 @@ output_path <- paste(
     true_model, "_", index, ".csv",
     sep = ""
 )
-write.csv(loo_output_df, output_path)
+write.csv(compare, output_path)
 print(paste("loo pointwise file save in", output_path))
 
 print("DONE!")
