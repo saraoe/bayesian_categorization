@@ -127,7 +127,7 @@ if (model == "rl_simple") {
   # parameters
   alpha_parameters <- seq(from = 0, to = 1, length.out = 4)
   temp_parameters <- seq(from = 0, to = 10, length.out = 4)
-  
+
   for (alpha in alpha_parameters) {
     for (temp in temp_parameters) {
       # trycatch to continue if sampling fails
@@ -143,7 +143,7 @@ if (model == "rl_simple") {
             temp = temp,
             seed = seed
           )
-          
+
           if (exists("recovery_df")) {
             recovery_df <- rbind(recovery_df, tmp)
           } else {
