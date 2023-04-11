@@ -192,7 +192,7 @@ compare <- as.data.frame(compare)
 compare$true_model <- true_model
 compare$index <- index
 output_path <- paste(
-    "data/recovery/model_recovery_loo_compare",
+    "data/recovery/model_recovery_loo_compare_",
     true_model, "_", index, ".csv",
     sep = ""
 )
