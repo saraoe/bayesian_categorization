@@ -122,11 +122,19 @@ for (sub in unique(df$subject)) {
             tmp_draws_df$subject <- sub
             tmp_draws_df$session <- ses
             tmp_draws_df$model <- model
-
-            if (exists("draws_df")) {
-                draws_df <- rbind(draws_df, tmp_draws_df)
+            
+            name_draws_df <- paste(model, "_draws_df", sep = "")
+            if (exists(name_draws_df)) {
+                assign(
+                    name_draws_df,
+                    rbind(eval(parse(text = name_draws_df)),
+                          tmp_draws_df)
+                )
             } else {
-                draws_df <- tmp_draws_df
+                assign(
+                    name_draws_df,
+                    tmp_draws_df
+                )
             }
 
             # save loo
@@ -153,9 +161,9 @@ for (sub in unique(df$subject)) {
         compare$session <- ses
 
         if (exists("compare_df")) {
-            compare_df <- rbind(compare_df, draws_df)
+            compare_df <- rbind(compare_df, compare)
         } else {
-            compare_df <- draws_df
+            compare_df <- compare
         }
     }
 }
@@ -164,8 +172,7 @@ print("------------")
 # write results
 for (model in c("gcm", "rl", "rl_simple")) {
     out_path <- paste("data/", model, "_samples.csv", sep = "")
-    model_draws_df <- draws_df %>%
-        filter(model == model)
+    model_draws_df <- eval(parse(text = paste(model, "_draws_df", sep = "")))
     write.csv(model_draws_df, out_path)
     print(paste(model, "draws_df written to path:", out_path))
 }
