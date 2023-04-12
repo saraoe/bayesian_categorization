@@ -25,14 +25,26 @@ git clone https://github.com/saraoe/bayesian_categorization.git
 ````
 cd bayesian_categorization
 ````
-*NB: Then make a folder in ``bayesian_categorization/`` called ``logs`` before running the bash scripts*
+*NB: You must make a folder in ``bayesian_categorization/`` called ``logs`` before running the bash scripts*
+
+To reproduce all the results run
+```
+bash run.sh
+```
+
+To reproduce parts of the analysis:
 
 To reproduce parameter recovery run
 ```` 
 bash src/parallel_pr.sh
 ````
 
+To reproduce model comparison run
+```` 
+bash src/model_comparison.sh
+````
+
 To reproduce sampling using empirical data run
 ```` 
-bash src/fit_models.sh
+Rscript src/fit_models.r 
 ````
