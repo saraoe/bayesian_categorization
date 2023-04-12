@@ -9,115 +9,202 @@ pacman::p_load(
 
 ```{r}
 # load data
-ntrials <- 104
-relevant_cols <- c(
-    "subject", "condition", "session"
-)
-for (n in seq_len(ntrials)) {
-    relevant_cols <- c(
-        relevant_cols,
-        paste("log_lik[", n, "]", sep = "")
-    )
+sessions <- c(1, 2, 3)
+
+for (ses in sessions) {
+    pointwise_tmp <- read_csv(
+        paste("data/model_comparison_pointwise_", ses, ".csv", sep = "")
+    ) %>%
+        mutate(
+            trial = rep(
+                seq_len(104),
+                length(unique(subject)) * length(unique(model))
+            ),
+            condition = ifelse(subject > 100, 2, 1)
+        )
+    pointwise_tmp$session <- ses
+
+    if (exists("pointwise_df")) {
+        pointwise_df <- rbind(pointwise_df, pointwise_tmp)
+    } else {
+        pointwise_df <- pointwise_tmp
+    }
+
+    compare_tmp <- read_csv(
+        paste("data/model_comparison_compare_", ses, ".csv", sep = "")
+    ) %>%
+        mutate(
+            condition = ifelse(subject > 100, 2, 1)
+        )
+    compare_tmp$session <- ses
+
+    if (exists("compare_df")) {
+        compare_df <- rbind(compare_df, compare_tmp)
+    } else {
+        compare_df <- compare_tmp
+    }
 }
 
-rl_asym <- read_csv("data/rl_samples.csv") %>%
-    select(relevant_cols) %>%
-    mutate(
-        model = "rl_asym"
-    )
-rl_simple <- read_csv("data/rl_simple_samples.csv") %>%
-    select(relevant_cols) %>%
-    mutate(
-        model = "rl_simple"
-    )
-
-df <- rbind(rl_asym, rl_simple)
-
-rm(rl_asym, rl_simple)
+colnames(compare_df) <- c(
+    "model",
+    colnames(compare_df)[2:ncol(compare_df)]
+)
 ```
 
-Log likelihood
+## PSIS diagnostic
 ```{r}
-mean_log_lik <- df %>%
-    group_by(
-        subject,
-        session,
-        condition,
-        model
-    ) %>%
-    summarise(
-        across(everything(),
-        list(mean))
-        ) %>%
-    gather(
-        key = "trial",
-        value = "log_lik",
-        'log_lik[1]_1':'log_lik[104]_1'
-    )
+ggplot(data = pointwise_df) +
+    geom_point(aes(x = trial, y = influence_pareto_k, color = model),
+        alpha = .2
+    ) +
+    geom_hline(
+        yintercept = 0,
+        linetype = "dashed", size = 1
+    ) +
+    geom_hline(
+        yintercept = 0.5,
+        linetype = "dashed", size = 1
+    ) +
+    geom_hline(
+        yintercept = 0.7,
+        linetype = "dashed", size = 1
+    ) +
+    theme_bw() +
+    labs(
+        x = "",
+        y = "Pareto k"
+    ) +
+    scale_color_manual(values = c("brown", "steelblue", "darkgreen"))
 
-sd_log_lik <- df %>%
-    group_by(
-        subject,
-        session,
-        condition,
-        model
-    ) %>%
-    summarise(
-        across(everything(),
-        list(sd))
-        ) %>%
-    gather(
-        key = "trial",
-        value = "sd",
-        'log_lik[1]_1':'log_lik[104]_1'
-    )
-
-log_lik_df <- merge(mean_log_lik, sd_log_lik) %>%
-    mutate(
-        trial = as.factor(str_extract(trial, "\\d+"))
-    )
-
-rm(mean_log_lik, sd_log_lik)
+ggsave("figs/model_comparison/psis_diagnostics.png",
+    width = 7
+)
 ```
 
 ```{r}
-log_lik_df %>%
+ggplot(data = pointwise_df) +
+    geom_point(aes(x = trial, y = influence_pareto_k, color = model),
+        alpha = .5
+    ) +
+    facet_wrap(. ~ subject) +
+    geom_hline(
+        yintercept = 0,
+        linetype = "dashed", size = 1
+    ) +
+    geom_hline(
+        yintercept = 0.5,
+        linetype = "dashed", size = 1
+    ) +
+    geom_hline(
+        yintercept = 0.7,
+        linetype = "dashed", size = 1
+    ) +
+    theme_bw() +
+    labs(
+        x = "",
+        y = "Pareto k"
+    ) +
+    scale_color_manual(values = c("brown", "steelblue", "darkgreen"))
+
+ggsave("figs/model_comparison/psis_diagnostics_subject.png",
+    width = 7
+)
+```
+
+## compare
+```{r}
+compare_df %>%
     group_by(condition, session, model) %>%
     summarize(
-        mean_log_lik = mean(log_lik),
-        sd = mean(sd)
+        mean(looic),
+        sd(looic)
+    )
+```
+
+## elpd diff
+```{r}
+elpd_diff <- pointwise_df %>%
+    select(c(elpd_loo, model, trial, subject, condition, session)) %>%
+    pivot_wider(names_from = model, values_from = elpd_loo) %>%
+    mutate(
+        rl_asym_rl_simple_diff = rl - rl_simple,
+        rl_asym_gcm_diff = rl - gcm,
+        rl_simple_gcm_diff = rl_simple - gcm
     )
 ```
 
 ```{r}
-ggplot(data = log_lik_df) +
-    geom_density(
-        aes(x = log_lik, fill = model),
-        alpha = .5) +
-    theme_bw() +
-    facet_wrap(session ~ condition) +
-    scale_fill_manual(values = c("orange", "purple"))
+elpd_diff %>%
+    group_by(condition, session) %>%
+    summarize(
+        mean(rl_asym_rl_simple_diff),
+        # sd(rl_asym_rl_simple_diff),
+        mean(rl_asym_gcm_diff),
+        # sd(rl_asym_gcm_diff),
+        mean(rl_simple_gcm_diff),
+        # sd(rl_simple_gcm_diff)
+    )
 ```
 
 ```{r}
-ggplot(data = log_lik_df) +
-    geom_point(
-        aes(
-            x = trial, y = log_lik,
-            color = model
-            ),
-        position = position_dodge(0.05)) +
-    geom_errorbar(
-        aes(
-            x = trial,
-            ymin = log_lik - sd,
-            ymax = log_lik + sd,
-            color = model
-            ),
-            width = .2,
-            position = position_dodge(0.05)
-        ) +
+ggplot(data = elpd_diff) +
+    geom_point(aes(x = trial, y = rl_asym_rl_simple_diff, color = session),
+        alpha = .5
+    ) +
+    geom_hline(
+        yintercept = 0, color = "black",
+        linetype = "dashed", size = 1
+    ) +
+    facet_wrap(. ~ condition) +
     theme_bw() +
-    facet_wrap(. ~ subject) +
-    scale_color_manual(values = c("orange", "purple"))
+    labs(
+        x = "",
+        y = "elpd difference"
+    )
+
+ggsave("figs/model_comparison/elpd_diff_rl_asym_rl_simple.png",
+    width = 7, height = 5
+)
+```
+
+```{r}
+ggplot(data = elpd_diff) +
+    geom_point(aes(x = trial, y = rl_asym_gcm_diff, color = session),
+        alpha = .5
+    ) +
+    geom_hline(
+        yintercept = 0, color = "black",
+        linetype = "dashed", size = 1
+    ) +
+    facet_wrap(. ~ condition) +
+    theme_bw() +
+    labs(
+        x = "",
+        y = "elpd difference"
+    )
+
+ggsave("figs/model_comparison/elpd_diff_rl_asym_gcm.png",
+    width = 7, height = 5
+)
+```
+
+```{r}
+ggplot(data = elpd_diff) +
+    geom_point(aes(x = trial, y = rl_simple_gcm_diff, color = session),
+        alpha = .5
+    ) +
+    geom_hline(
+        yintercept = 0, color = "black",
+        linetype = "dashed", size = 1
+    ) +
+    facet_wrap(. ~ condition) +
+    theme_bw() +
+    labs(
+        x = "",
+        y = "elpd difference"
+    )
+
+ggsave("figs/model_comparison/elpd_diff_rl_simple_gcm.png",
+    width = 7, height = 5
+)
 ```
