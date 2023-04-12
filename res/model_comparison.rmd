@@ -20,10 +20,10 @@ for (n in seq_len(ntrials)) {
     )
 }
 
-rl_assym <- read_csv("data/rl_samples.csv") %>%
+rl_asym <- read_csv("data/rl_samples.csv") %>%
     select(relevant_cols) %>%
     mutate(
-        model = "rl_assym"
+        model = "rl_asym"
     )
 rl_simple <- read_csv("data/rl_simple_samples.csv") %>%
     select(relevant_cols) %>%
@@ -31,9 +31,9 @@ rl_simple <- read_csv("data/rl_simple_samples.csv") %>%
         model = "rl_simple"
     )
 
-df <- rbind(rl_assym, rl_simple)
+df <- rbind(rl_asym, rl_simple)
 
-rm(rl_assym, rl_simple)
+rm(rl_asym, rl_simple)
 ```
 
 Log likelihood
