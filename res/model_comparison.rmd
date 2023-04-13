@@ -3,7 +3,8 @@
 # libraries
 library(pacman)
 pacman::p_load(
-    tidyverse
+    tidyverse,
+    patchwork
 )
 ```
 
@@ -45,39 +46,67 @@ for (ses in sessions) {
     }
 }
 
-colnames(compare_df) <- c(
-    "model",
-    colnames(compare_df)[2:ncol(compare_df)]
+# add model names for plotting and NA for inf pareto k values
+model_names <- list(
+    "gcm" = "GCM",
+    "rl" = "RL Assymetrical",
+    "rl_simple" = "RL Simple"
 )
+
+pointwise_df <- pointwise_df %>%
+    mutate(
+        model_name = as.character(model_names[model]),
+        influence_pareto_k = ifelse(
+            is.infinite(influence_pareto_k), NA, influence_pareto_k
+        )
+    )
+
+# add model names instead of numbers
+model_number <- list(
+    "1" = "gcm",
+    "2" = "rl",
+    "3" = "rl_simple"
+)
+
+colnames(compare_df) <- c(
+    "model", colnames(compare_df)[2:ncol(compare_df)]
+)
+compare_df <- compare_df %>%
+    mutate(
+        model = str_extract(model, "\\d"),
+        model = as.character(model_number[model]),
+        model_name = as.character(model_names[model])
+    )
 ```
 
 ## PSIS diagnostic
 ```{r}
 ggplot(data = pointwise_df) +
-    geom_point(aes(x = trial, y = influence_pareto_k, color = model),
+    geom_point(aes(x = trial, y = influence_pareto_k, color = model_name),
         alpha = .2
     ) +
     geom_hline(
         yintercept = 0,
-        linetype = "dashed", size = 1
+        linetype = "dashed", linewidth = 1
     ) +
     geom_hline(
         yintercept = 0.5,
-        linetype = "dashed", size = 1
+        linetype = "dashed", linewidth = 1
     ) +
     geom_hline(
         yintercept = 0.7,
-        linetype = "dashed", size = 1
+        linetype = "dashed", linewidth = 1
     ) +
     theme_bw() +
     labs(
         x = "",
-        y = "Pareto k"
+        y = "Pareto k",
+        color = "Model"
     ) +
-    scale_color_manual(values = c("brown", "steelblue", "darkgreen"))
+    scale_color_brewer(palette = "Dark2")
 
 ggsave("figs/model_comparison/psis_diagnostics.png",
-    width = 7
+    width = 7, height = 7
 )
 ```
 
@@ -89,36 +118,88 @@ ggplot(data = pointwise_df) +
     facet_wrap(. ~ subject) +
     geom_hline(
         yintercept = 0,
-        linetype = "dashed", size = 1
+        linetype = "dashed", linewidth = 1
     ) +
     geom_hline(
         yintercept = 0.5,
-        linetype = "dashed", size = 1
+        linetype = "dashed", linewidth = 1
     ) +
     geom_hline(
         yintercept = 0.7,
-        linetype = "dashed", size = 1
+        linetype = "dashed", linewidth = 1
     ) +
     theme_bw() +
     labs(
         x = "",
         y = "Pareto k"
     ) +
-    scale_color_manual(values = c("brown", "steelblue", "darkgreen"))
+    scale_color_brewer(palette = "Dark2")
 
 ggsave("figs/model_comparison/psis_diagnostics_subject.png",
-    width = 7
+    width = 14
 )
 ```
 
 ## compare
 ```{r}
+compare_df <- compare_df %>%
+    group_by(condition, session, subject) %>%
+    mutate(
+        model_rank = ifelse(
+            looic == min(looic), 1,
+            ifelse(looic == max(looic), 3, 2)
+        )
+    )
+
 compare_df %>%
     group_by(condition, session, model) %>%
     summarize(
-        mean(looic),
-        sd(looic)
+        mean = mean(looic),
+        sd = sd(looic)
     )
+
+compare_df %>%
+    filter(model_rank == 1) %>%
+    group_by(condition, session, model) %>%
+    summarize(n())
+
+compare_df %>%
+    group_by(condition, session, model) %>%
+    summarize(
+        mean(model_rank == 1)
+    )
+```
+
+```{r}
+p1 <- compare_df %>%
+    filter(condition == 1) %>%
+    ggplot() +
+    geom_density(aes(x = looic, fill = model_name),
+                 alpha = .5) +
+    facet_wrap(. ~ session) +
+    theme_bw() +
+    scale_fill_brewer(palette = "Dark2") +
+    labs(
+        fill = "Model",
+        title = "Condition 1")
+
+p2 <- compare_df %>%
+    filter(condition == 2) %>%
+    ggplot() +
+    geom_density(aes(x = looic, fill = model_name),
+                 alpha = .5) +
+    facet_wrap(. ~ session) +
+    theme_bw() +
+    scale_fill_brewer(palette = "Dark2") +
+    labs(
+        fill = "Model",
+        title = "Condition 2")
+
+p1 / p2 +
+  plot_layout(guides = "collect")
+
+ggsave("figs/model_comparison/looic_distributions.png",
+       width = 7, height = 7)
 ```
 
 ## elpd diff
@@ -129,20 +210,8 @@ elpd_diff <- pointwise_df %>%
     mutate(
         rl_asym_rl_simple_diff = rl - rl_simple,
         rl_asym_gcm_diff = rl - gcm,
-        rl_simple_gcm_diff = rl_simple - gcm
-    )
-```
-
-```{r}
-elpd_diff %>%
-    group_by(condition, session) %>%
-    summarize(
-        mean(rl_asym_rl_simple_diff),
-        # sd(rl_asym_rl_simple_diff),
-        mean(rl_asym_gcm_diff),
-        # sd(rl_asym_gcm_diff),
-        mean(rl_simple_gcm_diff),
-        # sd(rl_simple_gcm_diff)
+        rl_simple_gcm_diff = rl_simple - gcm,
+        session = as.factor(session)
     )
 ```
 
@@ -153,14 +222,15 @@ ggplot(data = elpd_diff) +
     ) +
     geom_hline(
         yintercept = 0, color = "black",
-        linetype = "dashed", size = 1
+        linetype = "dashed", linewidth = 1
     ) +
     facet_wrap(. ~ condition) +
     theme_bw() +
     labs(
         x = "",
         y = "elpd difference"
-    )
+    ) +
+    scale_color_brewer(palette = "Dark2")
 
 ggsave("figs/model_comparison/elpd_diff_rl_asym_rl_simple.png",
     width = 7, height = 5
@@ -174,14 +244,15 @@ ggplot(data = elpd_diff) +
     ) +
     geom_hline(
         yintercept = 0, color = "black",
-        linetype = "dashed", size = 1
+        linetype = "dashed", linewidth = 1
     ) +
     facet_wrap(. ~ condition) +
     theme_bw() +
     labs(
         x = "",
         y = "elpd difference"
-    )
+    ) +
+    scale_color_brewer(palette = "Dark2")
 
 ggsave("figs/model_comparison/elpd_diff_rl_asym_gcm.png",
     width = 7, height = 5
@@ -195,14 +266,15 @@ ggplot(data = elpd_diff) +
     ) +
     geom_hline(
         yintercept = 0, color = "black",
-        linetype = "dashed", size = 1
+        linetype = "dashed", linewidth = 1
     ) +
     facet_wrap(. ~ condition) +
     theme_bw() +
     labs(
         x = "",
         y = "elpd difference"
-    )
+    ) +
+    scale_color_brewer(palette = "Dark2")
 
 ggsave("figs/model_comparison/elpd_diff_rl_simple_gcm.png",
     width = 7, height = 5
