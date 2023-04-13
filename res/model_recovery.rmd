@@ -54,6 +54,7 @@ model_names <- list(
 pointwise_df <- pointwise_df %>%
     mutate(
         true_model_names = as.character(model_names[true_model]),
+        model_name = as.character(model_names[model]),
         influence_pareto_k = ifelse(
             is.infinite(influence_pareto_k), NA, influence_pareto_k
             )
