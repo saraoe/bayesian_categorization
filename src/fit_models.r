@@ -153,6 +153,7 @@ for (sub in unique(df$subject)) {
 
         tmp_loo <- as.data.frame(samples_loo$pointwise)
         tmp_loo$model <- model
+        tmp_loo$subject <- sub
         if (exists("loo_df")) {
             loo_df <- rbind(loo_df, tmp_loo)
         } else {
@@ -188,10 +189,10 @@ for (model in c("gcm", "rl", "rl_simple")) {
 
 out_path <- paste("data/model_comparison_pointwise", "_", ses, ".csv", sep = "")
 write.csv(loo_df, out_path)
-print(paste("Loo pointwise df written to path:", outpath))
+print(paste("Loo pointwise df written to path:", out_path))
 
 out_path <- paste("data/model_comparison_compare", "_", ses, ".csv", sep = "")
 write.csv(compare_df, out_path)
-print(paste("Loo compare df written to path:", outpath))
+print(paste("Loo compare df written to path:", out_path))
 
 print("DONE!")
