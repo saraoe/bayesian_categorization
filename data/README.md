@@ -3,14 +3,14 @@
 ## Organization
 ````
 ├── data 
-│   ├── recovery                <- csv-files from model and parameter recovery
+│   ├── recovery                            <- csv-files from model and parameter recovery
 │   │   └── ...
-│   ├── AlienData.csv           <- empirical data
-│   ├── rl_*_samples.csv        <- samples from rl model fitted to AlienData
-│   ├── rl_simple*_samples.csv  <- samples from rl simple model fitted to AlienData
-│   ├── gcm_*_samples.csv       <- samples from gcm model fitted to AlienData
-│   ├── model_comparison_pointwise_*.csv <- pointwise loo estimates
-│   └── model_comparison_compare_*.csv       <- output from loo compare
+│   ├── AlienData.csv                       <- empirical data
+│   ├── rl_*_samples.csv                    <- samples from rl model fitted to AlienData
+│   ├── rl_simple*_samples.csv              <- samples from rl simple model fitted to AlienData
+│   ├── gcm_*_samples.csv                   <- samples from gcm model fitted to AlienData
+│   ├── model_comparison_pointwise_*.csv    <- pointwise loo estimates
+│   └── model_comparison_compare_*.csv      <- output from loo compare
 ````
 
 ## Alien data
