@@ -154,6 +154,14 @@ generated quantities {
 
     // posterior pred
     array[ntrials] int<lower=0, upper=1> posteriorpred = bernoulli_rng(r);
+    array[ntrials] int<lower=0, upper=1> posteriorcorrect;
+    for (i in 1:ntrials) {
+        if (posteriorpred[i] == cat_one[i]) {
+            posteriorcorrect[i] = 1;
+        } else {
+            posteriorcorrect[i] = 0;
+        }
+    }
     
     
     // log likelihood
