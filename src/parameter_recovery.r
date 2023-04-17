@@ -88,7 +88,7 @@ if (model == "gcm") {
 if (model == "rl") {
   # parameters
   alpha_parameters <- seq(from = 0, to = 1, length.out = 4)
-  temp_parameters <- seq(from = 0, to = 10, length.out = 4)
+  temp_parameters <- seq(from = 0, to = 3, length.out = 4)
 
   for (alpha_pos in alpha_parameters) {
     for (alpha_neg in alpha_parameters) {

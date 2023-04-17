@@ -66,7 +66,7 @@ if (true_model == "gcm") {
     print(paste("alpha_pos =", alpha_pos))
     alpha_neg <- runif(1, min = 0.5, max = 0.9)
     print(paste("alpha_neg =", alpha_neg))
-    temp <- runif(1, min = 0.1, max = 5)
+    temp <- runif(1, min = 0.1, max = 3)
     print(paste("temperature =", temp))
 
     responses <- reinforcement_learning(
@@ -79,7 +79,7 @@ if (true_model == "gcm") {
 } else if (true_model == "rl_simple") {
     alpha <- runif(1, min = 0.1, max = 0.9)
     print(paste("alpha =", alpha))
-    temp <- runif(1, min = 0.1, max = 5)
+    temp <- runif(1, min = 0.1, max = 3)
     print(paste("temperature =", temp))
 
     responses <- reinforcement_learning(

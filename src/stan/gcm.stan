@@ -43,7 +43,7 @@ parameters {
 
 transformed parameters {
     // parameter c 
-    real<lower=0, upper=5> c = inv_logit(logit_c)*5;  // times 5 as c is bounded between 0 and 5
+    real<lower=0, upper=2> c = inv_logit(logit_c)*2;  // times 2 as c is bounded between 0 and 2
 
     // parameter r (probability of response = category 1)
     array[ntrials] real<lower=0.0001, upper=0.9999> r;
@@ -104,7 +104,7 @@ generated quantities {
     // priors
     simplex[nfeatures] w_prior = dirichlet_rng(w_prior_values);
     real logit_c_prior = normal_rng(c_prior_values[1], c_prior_values[2]);
-    real<lower=0, upper=5> c_prior = inv_logit(logit_c_prior)*5;
+    real<lower=0, upper=2> c_prior = inv_logit(logit_c_prior)*2;
 
     // prior pred
     array[ntrials] real<lower=0, upper=1> r_prior;

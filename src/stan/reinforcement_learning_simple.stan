@@ -42,7 +42,7 @@ transformed parameters {
    real<lower=0, upper=1> alpha = inv_logit(logit_alpha);
 
    // temperature parameter
-   real<lower=0, upper=20> temp = inv_logit(logit_temp)*20;  // upper bound is 20
+   real<lower=0, upper=3> temp = inv_logit(logit_temp)*3;  // upper bound is 3
 
    // theta (decision probability)
    array[ntrials] real theta;
@@ -80,7 +80,7 @@ generated quantities {
    real<lower=0, upper=1> alpha_prior = inv_logit(logit_alpha_prior);
 
    real logit_temp_prior = normal_rng(temp_prior_values[1], temp_prior_values[2]);
-   real<lower=0, upper=20> temp_prior = inv_logit(logit_temp_prior)*20;
+   real<lower=0, upper=3> temp_prior = inv_logit(logit_temp_prior)*3;
 
    // prior predictive checks
    array[ntrials] real<lower=0, upper=1> theta_prior;
