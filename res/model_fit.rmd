@@ -11,7 +11,6 @@ pacman::p_load(
 ```{r}
 # emperical data
 aliendata <- read_csv("data/AlienData.csv") %>%
-    filter(session == 1) %>%
     mutate(
         subject = ifelse(condition == 2, subject + 100, subject)
     )
@@ -610,7 +609,37 @@ ggplot(data = posteriorcorrect) +
 ## Reinforcement Learning (simple)
 ### load data
 ```{r}
-draws_df <- read_csv("data/rl_simple_samples.csv")
+sessions <- c(1, 2, 3)
+
+# chose only relevant columns
+relevant_cols <- c(
+    "alpha", "alpha_prior",
+    "temp", "temp_prior",
+    ".iteration", "chain",
+    "condition", "subject", "session"
+)
+
+for (t in 1:104) {
+    colname <- paste("posteriorcorrect[", t, "]", sep = "")
+    relevant_cols <- c(relevant_cols, colname)
+}
+
+# load csv files
+for (ses in sessions) {
+    tmp_draws_df <- read_csv(
+        paste("data/rl_simple_", ses, "_samples.csv", sep = "")
+    ) %>%
+        select(relevant_cols) %>%
+        mutate(
+            session = ses
+        )
+
+    if (exists("draws_df")) {
+        draws_df <- rbind(draws_df, tmp_draws_df)
+    } else {
+        draws_df <- tmp_draws_df
+    }
+}
 
 # update colnames
 new_colnames <- c()
