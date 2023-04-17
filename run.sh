@@ -2,3 +2,4 @@
 bash src/parameter_recovery.sh
 bash src/model_recovery.sh
 bash src/fit_models.sh
+Rscript src/gather_samples.r
