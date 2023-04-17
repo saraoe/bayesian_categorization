@@ -49,9 +49,9 @@ relevant_col_names <- function(model_name) {
       "condition", "subject", "session"
     )
     
-    for (t in 1:104) {
-      weight = paste("w[", t, "]", sep = "")
-      weight_prior = paste("w_prior[", t, "]", sep = "")
+    for (f in seq_len(5)) {
+      weight = paste("w[", f, "]", sep = "")
+      weight_prior = paste("w_prior[", f, "]", sep = "")
       relevant_cols <- c(
         relevant_cols,
         weight, weight_prior
@@ -77,7 +77,7 @@ relevant_col_names <- function(model_name) {
   }
   
   # add posterior correct
-  for (t in 1:104) {
+  for (t in seq_len(104)) {
     colname <- paste("posteriorcorrect[", t, "]", sep = "")
     relevant_cols <- c(relevant_cols, colname)
   }
