@@ -13,64 +13,32 @@ pacman::p_load(
 ## GCM
 ### load data
 ```{r}
-types <- c("binary")
-nobservations <- c(104, 208)
+nobservations <- c(104, 208, 312)
 
 rm(recovery_df) # remove in case it is already defined
 # read df
 for (nobs in nobservations) {
-  for (type in types) {
-    tmp <- read_csv(
-      paste("data/recovery/parameter_recovery_gcm_",
-        type, nobs, "_1_bound2.csv",
-        sep = ""
-      )
+  tmp <- read_csv(
+    paste("data/recovery/parameter_recovery_gcm_binary",
+      nobs, "_1.csv",
+      sep = ""
     )
+  )
 
-    if (exists("recovery_df")) {
-      recovery_df <- rbind(recovery_df, tmp)
-    } else {
-      recovery_df <- tmp
-    }
+  if (exists("recovery_df")) {
+    recovery_df <- rbind(recovery_df, tmp)
+  } else {
+    recovery_df <- tmp
   }
 }
+
+recovery_df <- recovery_df %>% 
+    mutate(
+      nobservations = as.factor(nobservations)
+    )
 ```
 
 ### inspection
-```{r}
-ggplot(data = recovery_df) +
-  geom_density(aes(x = c_prior), fill = "blue", alpha = .5) +
-  geom_density(aes(x = c), fill = "red", alpha = .5) +
-  geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
-  theme_bw() +
-  facet_wrap(. ~ c_parameter) +
-  labs(
-    title = "Prior Posterior update: C parameter",
-    caption = "Prior (blue) and posterior (red)"
-  ) +
-  xlab("C")
-```
-
-```{r}
-w_parameters <- unique(recovery_df$w_parameter)
-filter_w_param <- w_parameters[1]
-
-recovery_df %>%
-  filter(w_parameter == filter_w_param) %>%
-  ggplot() +
-  geom_density(aes(x = c_prior), fill = "blue", alpha = .5) +
-  geom_density(aes(x = c), fill = "red", alpha = .5) +
-  geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
-  theme_bw() +
-  facet_wrap(. ~ c_parameter) +
-  labs(
-    title = "Prior Posterior update: C parameter",
-    subtitle = paste("filtered by w-parameter:", filter_w_param),
-    caption = "Prior (blue) and posterior (red)"
-  ) +
-  xlab("C")
-```
-
 ```{r}
 recovery_df %>%
   group_by(c_parameter) %>%
@@ -78,18 +46,79 @@ recovery_df %>%
     mean_c = mean(c),
     sd_c = sd(c),
     mean_c_prior = mean(c_prior),
-    sd_c_prior = sd(c_prior),
+    sd_c_prior = sd(c_prior)
   )
 ```
 
 ```{r}
-rm(weights_draws_df)
+p <- ggplot(data = recovery_df) +
+  geom_density(aes(x = c_prior), fill = "blue", alpha = .5) +
+  geom_density(aes(x = c), fill = "red", alpha = .5) +
+  geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
+  theme_bw() +
+  facet_wrap(. ~ c_parameter) +
+  xlab("C")
+
+p + labs(
+    title = "Prior Posterior update: C parameter",
+    caption = "Prior (blue) and posterior (red)"
+  )
+
+ggsave("figs/gcm/parameter_recovery/pos-prior-update-c.png", p,
+  width = 7
+)
+```
+
+```{r}
+recovery_df %>%
+  group_by(c_parameter, w_parameter) %>%
+  summarize(
+    mean_c = mean(c),
+    sd_c = sd(c),
+    mean_c_prior = mean(c_prior),
+    sd_c_prior = sd(c_prior)
+  )
+```
+
+```{r}
+ggplot(data = recovery_df) +
+  geom_density(aes(x = c, fill = w_parameter), alpha = .5) +
+  # geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
+  theme_bw() +
+  facet_wrap(. ~ c_parameter) +
+  scale_fill_manual(values = c("orange", "purple")) +
+  xlab("C")
+
+ggsave("figs/gcm/parameter_recovery/pos-c_by_w.png", p,
+  width = 7
+)
+```
+
+```{r}
+ggplot(data = recovery_df) +
+  geom_density(aes(x = c, fill = nobservations), alpha = .5) +
+  # geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
+  theme_bw() +
+  facet_wrap(. ~ c_parameter) +
+  scale_fill_brewer(palette = "Dark2") +
+  labs(
+    x = "C",
+    fill = "Number of observations"
+  )
+
+ggsave("figs/gcm/parameter_recovery/pos-c_by_nobs.png", p,
+  width = 7
+)
+```
+
+```{r}
+rm(weights_draws_df) # rm in case it is already defined
 
 c_parameters <- unique(recovery_df$c_parameter)
 
 for (c_param in c_parameters) {
   for (w_params in w_parameters) {
-    tmp <- recovery_df %>%
+    weights <- recovery_df %>%
       filter(c_parameter == c_param & w_parameter == w_params) %>%
       pivot_longer(
         c("w_1", "w_2", "w_3", "w_4", "w_5"),
@@ -98,10 +127,22 @@ for (c_param in c_parameters) {
       mutate(feature_number = str_extract(features, "\\d+")) %>%
       select(c(feature_number, weights)) %>%
       mutate(
-        w_parameter = as.numeric(str_split(w_params, ",")[[1]])[as.integer(feature_number)],
+        w_parameter = as.numeric(
+          str_split(w_params, ",")[[1]]
+          )[as.integer(feature_number)],
         w_param_cond = w_params,
         c_parameter = c_param
       )
+    
+    weights_prior <- recovery_df %>%
+      filter(c_parameter == c_param & w_parameter == w_params) %>%
+      pivot_longer(
+        c("w_prior_1", "w_prior_2", "w_prior_3", "w_prior_4", "w_prior_5"),
+        names_to = "features", values_to = "weights_prior"
+      ) %>%
+      select(c(weights_prior))
+    
+    tmp <- cbind(weights, weights_prior)
 
     if (exists("weights_draws_df")) {
       weights_draws_df <- rbind(weights_draws_df, tmp)
@@ -110,6 +151,8 @@ for (c_param in c_parameters) {
     }
   }
 }
+
+rm(weights, weights_prior, tmp)
 ```
 
 ```{r}
@@ -118,10 +161,59 @@ weights_draws_df %>%
   summarize(
     w_mean = mean(weights),
     sd_w = sd(weights),
+    w_prior_mean = mean(weights_prior),
+    sd_w_prior = sd(weights_prior),
     true_w = unique(w_parameter)
   )
 ```
 
+```{r}
+weights_draws_df %>%
+  filter(w_param_cond == "1,0,0,0,0") %>%
+  ggplot() +
+  geom_density(
+    aes(x = weights_prior),
+    alpha = .5, fill = "blue"
+  ) +
+  geom_density(
+    aes(x = weights),
+    alpha = .5, fill = "red"
+  ) +
+  geom_vline(
+    aes(xintercept = w_parameter),
+    linetype = "dashed"
+    ) +
+  theme_bw() +
+  labs(x = "weight") +
+  facet_wrap(. ~ feature_number)
+
+ggsave("figs/gcm/parameter_recovery/pos-prior-update_w_1.png",
+       width = 7)
+```
+
+```{r}
+weights_draws_df %>%
+  filter(w_param_cond == "0.2,0.2,0.2,0.2,0.2") %>%
+  ggplot() +
+  geom_density(
+    aes(x = weights_prior),
+    alpha = .5, fill = "blue"
+  ) +
+  geom_density(
+    aes(x = weights),
+    alpha = .5, fill = "red"
+  ) +
+  geom_vline(
+    aes(xintercept = w_parameter),
+    linetype = "dashed"
+    ) +
+  theme_bw() +
+  labs(x = "weight") +
+  facet_wrap(. ~ feature_number)
+
+ggsave("figs/gcm/parameter_recovery/pos-prior-update_w_2.png",
+       width = 7)
+```
 
 ```{r}
 ggplot(data = weights_draws_df) +
@@ -129,25 +221,29 @@ ggplot(data = weights_draws_df) +
     aes(
       x = weights, fill = w_param_cond
     ),
-    alpha = .2
+    alpha = .3
   ) +
-  geom_vline(aes(xintercept = w_parameter, color = w_param_cond), linetype = "dashed") +
+  geom_vline(
+    aes(xintercept = w_parameter, color = w_param_cond), 
+    linetype = "dashed"
+    ) +
   theme_bw() +
   facet_wrap(. ~ feature_number) +
   scale_fill_manual(values = c("orange", "purple")) +
   scale_color_manual(values = c("orange", "purple")) +
   labs(
-    title = "Posterior for W parameter",
     color = "W parameters",
-    fill = "W parameters"
+    fill = "W parameters",
+    x = "weight"
   )
+
+ggsave("figs/gcm/parameter_recovery/pos_w_parameters.png",
+       width = 7)
 ```
 
 ```{r}
-filter_w_param <- w_parameters[1]
-
 weights_draws_df %>%
-  filter(w_param_cond == filter_w_param) %>%
+  filter(w_param_cond == "1,0,0,0,0") %>%
   ggplot() +
   geom_density(
     aes(
@@ -160,11 +256,35 @@ weights_draws_df %>%
   facet_wrap(. ~ feature_number) +
   scale_fill_brewer(palette = "PuOr") +
   labs(
-    title = "Posterior for W parameter",
-    subtitle = paste("filtered by w-parameter:", filter_w_param),
     color = "C parameters",
     fill = "C parameters"
   )
+
+ggsave("figs/gcm/parameter_recovery/pos-w_1_by_c.png",
+       width = 7)
+```
+
+```{r}
+weights_draws_df %>%
+  filter(w_param_cond == "0.2,0.2,0.2,0.2,0.2") %>%
+  ggplot() +
+  geom_density(
+    aes(
+      x = weights, fill = as.character(c_parameter)
+    ),
+    alpha = .4
+  ) +
+  geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
+  theme_bw() +
+  facet_wrap(. ~ feature_number) +
+  scale_fill_brewer(palette = "PuOr") +
+  labs(
+    color = "C parameters",
+    fill = "C parameters"
+  )
+
+ggsave("figs/gcm/parameter_recovery/pos-w_2_by_c.png",
+       width = 7)
 ```
 
 ## Reinforcement Learning
