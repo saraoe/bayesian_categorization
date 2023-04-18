@@ -3,7 +3,7 @@
 ## INPUT ARGUMENTS ##
 args <- commandArgs(trailingOnly = TRUE)
 
-if (length(args) != 4) {
+if (length(args) != 3) {
   stop("Input missing!", call. = FALSE)
 }
 
@@ -11,7 +11,7 @@ if (length(args) != 4) {
 model <- args[1]
 index <- as.integer(args[2])
 n_obs <- as.integer(args[3])
-feature_type <- args[4]
+feature_type <- "binary"
 
 # Get a random seed
 seed <- sample(c(1:1000000), 1)
@@ -21,7 +21,6 @@ print("--------------")
 print(paste("Running", model, "with:"))
 print(paste("Index =", index))
 print(paste("N observations = ", n_obs))
-print(paste("Feature type =", feature_type))
 print(paste("Seed =", seed))
 print("--------------")
 
