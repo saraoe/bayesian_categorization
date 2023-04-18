@@ -535,7 +535,7 @@ ggsave("figs/rl/parameter_recovery/pos-alphas_by_temp.png", p,
 ```
 
 ```{r}
-p <- ggplot(data = recovery_df) +
+p1 <- ggplot(data = recovery_df) +
   geom_density(
     aes(
       x = alpha_neg,
@@ -546,19 +546,19 @@ p <- ggplot(data = recovery_df) +
   geom_vline(aes(xintercept = true_alpha_neg), linetype = "dashed") +
   theme_bw() +
   labs(fill = "Number of observations") +
-  facet_wrap(. ~ true_alpha_neg_round) +
+  facet_wrap(. ~ true_alpha_neg_round, scale = "free") +
   xlab(latex2exp::TeX("$\\alpha_-$")) +
   scale_fill_brewer(palette = "Dark2") +
   theme(legend.position = "bottom")
 
 p + labs(title = "Posterior update: Alpha_negative")
-ggsave("figs/rl/parameter_recovery/pos-alpha-neg_by_nobs.png", p,
+ggsave("figs/rl/parameter_recovery/pos-alpha-neg_by_nobs.png", p1,
   width = 7, height = 5
 )
 ```
 
 ```{r}
-p <- ggplot(data = recovery_df) +
+p2 <- ggplot(data = recovery_df) +
   geom_density(
     aes(
       x = alpha_pos,
@@ -575,13 +575,19 @@ p <- ggplot(data = recovery_df) +
   theme(legend.position = "bottom")
 
 p + labs(title = "Posterior update: Alpha_positive")
-ggsave("figs/rl/parameter_recovery/pos-alpha-pos_by_nobs.png", p,
+ggsave("figs/rl/parameter_recovery/pos-alpha-pos_by_nobs.png", p2,
   width = 7, height = 5
 )
 ```
 
 ```{r}
-p <- ggplot(data = recovery_df) +
+p1 / p2 +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+```
+
+```{r}
+p1 <- ggplot(data = recovery_df) +
   geom_density(
     aes(
       x = alpha_neg,
@@ -591,7 +597,7 @@ p <- ggplot(data = recovery_df) +
   ) +
   geom_vline(aes(xintercept = true_alpha_neg), linetype = "dashed") +
   theme_bw() +
-  facet_wrap(. ~ true_alpha_neg_round) +
+  facet_wrap(. ~ true_alpha_neg_round, scale = "free") +
   labs(fill = latex2exp::TeX("$\\tau$")) +
   xlab(latex2exp::TeX("$\\alpha_-$")) +
   scale_fill_brewer(
@@ -600,13 +606,13 @@ p <- ggplot(data = recovery_df) +
   theme(legend.position = "bottom")
 
 p + labs(title = "Posterior update: Alpha_negative")
-ggsave("figs/rl/parameter_recovery/pos-alpha-neg_by_temp.png", p,
+ggsave("figs/rl/parameter_recovery/pos-alpha-neg_by_temp.png", p1,
   width = 7, height = 5
 )
 ```
 
 ```{r}
-p <- ggplot(data = recovery_df) +
+p2 <- ggplot(data = recovery_df) +
   geom_density(
     aes(
       x = alpha_pos,
@@ -625,9 +631,15 @@ p <- ggplot(data = recovery_df) +
   theme(legend.position = "bottom")
 
 p + labs(title = "Posterior update: Alpha_positive")
-ggsave("figs/rl/parameter_recovery/pos-alpha-pos_by_temp.png", p,
+ggsave("figs/rl/parameter_recovery/pos-alpha-pos_by_temp.png", p2,
   width = 7, height = 5
 )
+```
+
+```{r}
+p1 / p2 +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
 ```
 
 ```{r}
