@@ -14,7 +14,7 @@ data {
 
     // priors
     vector[nfeatures] w_prior_values;  // concentration parameters for dirichlet distribution <lower=1>
-    array[2] int c_prior_values;  // mean and variance for logit-normal distribution
+    array[2] real c_prior_values;  // mean and variance for logit-normal distribution
 }
 
 transformed data {
