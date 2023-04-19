@@ -52,13 +52,13 @@ transformed parameters {
     for (i in 1:ntrials) {
 
         // calculate distance from obs to all exemplars
-        array[(i-1)] real exemplar_dist;
+        array[(i-1)] real exemplar_sim;
         for (e in 1:(i-1)){
             array[nfeatures] real tmp_dist;
             for (j in 1:nfeatures) {
                 tmp_dist[j] = w[j]*abs(obs[e,j] - obs[i,j]);
             }
-            exemplar_dist[e] = sum(tmp_dist);
+            exemplar_sim[e] = exp(-c * sum(tmp_dist));
         }
 
         if (sum(cat_one[:(i-1)])==0 || sum(cat_two[:(i-1)])==0){  // if there are no examplars in one of the categories
@@ -70,8 +70,8 @@ transformed parameters {
             
             array[sum(cat_one[:(i-1)])] int tmp_idx_one = cat_one_idx[:sum(cat_one[:(i-1)])];
             array[sum(cat_two[:(i-1)])] int tmp_idx_two = cat_two_idx[:sum(cat_two[:(i-1)])];
-            similarities[1] = exp(-c * sum(exemplar_dist[tmp_idx_one]));
-            similarities[2] = exp(-c * sum(exemplar_dist[tmp_idx_two]));
+            similarities[1] = sum(exemplar_sim[tmp_idx_one]);
+            similarities[2] = sum(exemplar_sim[tmp_idx_two]);
 
             // calculate r[i]
             rr[i] = (b*similarities[1]) / (b*similarities[1] + (1-b)*similarities[2]);
