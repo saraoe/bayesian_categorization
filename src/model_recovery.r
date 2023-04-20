@@ -185,7 +185,7 @@ write.csv(loo_output_df, output_path)
 print(paste("loo pointwise file save in", output_path))
 
 print("Compare:")
-compare <- loo_compare(gcm_loo, rl_loo, rl_simple_loo)
+compare <- loo_compare(list(gcm_loo, rl_loo, rl_simple_loo))
 print(compare)
 
 compare <- as.data.frame(compare)
