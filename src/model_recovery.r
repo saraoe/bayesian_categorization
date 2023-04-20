@@ -191,7 +191,7 @@ for (index in seq_len(26)) {
 print("--------------")
 output_path <- paste(
     "data/recovery/model_recovery_loo_pointwise_",
-    true_model, "_.csv",
+    true_model, ".csv",
     sep = ""
 )
 write.csv(loo_output_df, output_path)
@@ -200,10 +200,10 @@ print(paste("loo pointwise file save in", output_path))
 
 output_path <- paste(
     "data/recovery/model_recovery_loo_compare_",
-    true_model, "_.csv",
+    true_model, ".csv",
     sep = ""
 )
 write.csv(compare_df, output_path)
-print(paste("loo pointwise file save in", output_path))
+print(paste("loo compare file save in", output_path))
 
 print("DONE!")
