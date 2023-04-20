@@ -17,7 +17,7 @@ pointwise_df <- read_csv("data/recovery/model_recovery_pointwise.csv")
 # add model names for plotting and NA for inf pareto k values
 model_names <- list(
     "gcm" = "GCM",
-    "rl" = "RL Assymetrical",
+    "rl" = "RL Asymmetrical",
     "rl_simple" = "RL Simple"
 )
 
@@ -32,9 +32,9 @@ pointwise_df <- pointwise_df %>%
 
 # add model names instead of numbers
 model_number <- list(
-    "model1" = "gcm",
-    "model2" = "rl",
-    "model3" = "rl_simple"
+    "1" = "gcm",
+    "2" = "rl",
+    "3" = "rl_simple"
 )
 
 colnames(compare_df) <- c(
@@ -42,7 +42,9 @@ colnames(compare_df) <- c(
 )
 compare_df <- compare_df %>%
     mutate(
-        model = as.character(model_number[model])
+        model = str_extract(model, "\\d"),
+        model = as.character(model_number[model]),
+        model_name = as.character(model_names[model])
     )
 ```
 
@@ -50,14 +52,14 @@ compare_df <- compare_df %>%
 ```{r}
 ggplot(data = pointwise_df) +
     geom_point(aes(x = trial, y = influence_pareto_k, color = model_name),
-                alpha = .5) +
+                alpha = .2) +
     facet_wrap(. ~ true_model_names) +
     geom_hline(yintercept = 0,
-               linetype = "dashed", size = 1) +
+               linetype = "dashed", linewidth = 1) +
     geom_hline(yintercept = 0.5,
-               linetype = "dashed", size = 1) +
+               linetype = "dashed", linewidth = 1) +
     geom_hline(yintercept = 0.7,
-               linetype = "dashed", size = 1) +
+               linetype = "dashed", linewidth = 1) +
     theme_bw() +
     labs(
         x = "",
@@ -86,6 +88,24 @@ compare_df %>%
 
 ```
 
+```{r}
+compare_df <- compare_df %>%
+    group_by(index, true_model) %>%
+    mutate(
+        model_rank = ifelse(
+            looic == min(looic), 1,
+            ifelse(looic == max(looic), 3, 2)
+        )
+    )
+
+compare_df %>%
+    group_by(true_model, model) %>%
+    summarize(
+        mean(model_rank == 1),
+        sum(model_rank == 1)
+    )
+```
+
 ## elpd diff
 ```{r}
 elpd_diff <- pointwise_df %>%
@@ -101,9 +121,9 @@ elpd_diff <- pointwise_df %>%
 ```{r}
 ggplot(data = elpd_diff) +
     geom_point(aes(x = trial, y = rl_asym_rl_simple_diff),
-                alpha = .5) +
-    geom_hline(yintercept = 0, color = "steelblue",
-               linetype = "dashed", size = 1.2) +
+                alpha = .2) +
+    geom_hline(yintercept = 0, color = "orange",
+               linetype = "dashed", linewidth = 1) +
     facet_wrap(. ~ true_model_names) +
     theme_bw() +
     labs(
@@ -118,9 +138,9 @@ ggsave("figs/model_recovery/elpd_diff_rl_asym_rl_simple.png",
 ```{r}
 ggplot(data = elpd_diff) +
     geom_point(aes(x = trial, y = rl_asym_gcm_diff),
-                alpha = .5) +
-    geom_hline(yintercept = 0, color = "steelblue",
-               linetype = "dashed", size = 1.2) +
+                alpha = .2) +
+    geom_hline(yintercept = 0, color = "orange",
+               linetype = "dashed", linewidth = 1) +
     facet_wrap(. ~ true_model_names) +
     theme_bw() +
     labs(
@@ -135,9 +155,9 @@ ggsave("figs/model_recovery/elpd_diff_rl_asym_gcm.png",
 ```{r}
 ggplot(data = elpd_diff) +
     geom_point(aes(x = trial, y = rl_simple_gcm_diff),
-                alpha = .5) +
-    geom_hline(yintercept = 0, color = "steelblue",
-               linetype = "dashed", size = 1.2) +
+                alpha = .2) +
+    geom_hline(yintercept = 0, color = "orange",
+               linetype = "dashed", linewidth = 1) +
     facet_wrap(. ~ true_model_names) +
     theme_bw() +
     labs(
