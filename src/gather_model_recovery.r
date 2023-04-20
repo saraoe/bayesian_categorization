@@ -11,7 +11,7 @@ true_models <- c("gcm", "rl", "rl_simple")
 for (true_model in true_models) {
   tmp_compare <- read_csv(paste(
     "data/recovery/model_recovery_loo_compare_",
-    true_model, "_", i, ".csv", sep = ""
+    true_model, ".csv", sep = ""
   ))
   
   if (exists("compare_df")) {
@@ -22,10 +22,11 @@ for (true_model in true_models) {
   
   tmp_pointwise <- read_csv(paste(
     "data/recovery/model_recovery_loo_pointwise_",
-    true_model, "_", i, ".csv", sep = ""
-  )) %>% 
+    true_model, ".csv", sep = ""
+  )) %>%
+    group_by(index, model) %>%
     mutate(
-      trial = rep(seq_len(104), 3)
+      trial = seq_len(104)
     )
   
   if (exists("pointwise_df")) {
