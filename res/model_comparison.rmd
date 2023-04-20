@@ -81,6 +81,22 @@ compare_df <- compare_df %>%
 
 ## PSIS diagnostic
 ```{r}
+pointwise_df <- pointwise_df %>% 
+    mutate(
+        critical_psis = ifelse(
+            influence_pareto_k > .7 | is.na(influence_pareto_k),
+            1, 0
+        )
+    )
+
+pointwise_df %>%
+    group_by(model) %>%
+    summarize(
+        sum(critical_psis) / n()
+    )
+```
+
+```{r}
 ggplot(data = pointwise_df) +
     geom_point(aes(x = trial, y = influence_pareto_k, color = model_name),
         alpha = .2
@@ -112,7 +128,7 @@ ggsave("figs/model_comparison/psis_diagnostics.png",
 
 ```{r}
 ggplot(data = pointwise_df) +
-    geom_point(aes(x = trial, y = influence_pareto_k, color = model),
+    geom_point(aes(x = trial, y = influence_pareto_k, color = model_name),
         alpha = .5
     ) +
     facet_wrap(. ~ subject) +
@@ -131,12 +147,13 @@ ggplot(data = pointwise_df) +
     theme_bw() +
     labs(
         x = "",
-        y = "Pareto k"
+        y = "Pareto k",
+        color = "Model"
     ) +
     scale_color_brewer(palette = "Dark2")
 
 ggsave("figs/model_comparison/psis_diagnostics_subject.png",
-    width = 14
+    width = 7
 )
 ```
 
@@ -154,19 +171,8 @@ compare_df <- compare_df %>%
 compare_df %>%
     group_by(condition, session, model) %>%
     summarize(
-        mean = mean(looic),
-        sd = sd(looic)
-    )
-
-compare_df %>%
-    filter(model_rank == 1) %>%
-    group_by(condition, session, model) %>%
-    summarize(n())
-
-compare_df %>%
-    group_by(condition, session, model) %>%
-    summarize(
-        mean(model_rank == 1)
+        mean(model_rank == 1),
+        sum(model_rank == 1)
     )
 ```
 
@@ -181,7 +187,7 @@ p1 <- compare_df %>%
     scale_fill_brewer(palette = "Dark2") +
     labs(
         fill = "Model",
-        title = "Condition 1")
+        title = "A) Condition 1")
 
 p2 <- compare_df %>%
     filter(condition == 2) %>%
@@ -193,7 +199,7 @@ p2 <- compare_df %>%
     scale_fill_brewer(palette = "Dark2") +
     labs(
         fill = "Model",
-        title = "Condition 2")
+        title = "B) Condition 2")
 
 p1 / p2 +
   plot_layout(guides = "collect")
