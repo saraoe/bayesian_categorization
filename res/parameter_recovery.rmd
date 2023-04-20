@@ -33,10 +33,10 @@ for (nobs in nobservations) {
   }
 }
 
-recovery_df <- recovery_df %>% 
-    mutate(
-      nobservations = as.factor(nobservations)
-    )
+recovery_df <- recovery_df %>%
+  mutate(
+    nobservations = as.factor(nobservations)
+  )
 ```
 
 ### inspection
@@ -61,9 +61,9 @@ p <- ggplot(data = recovery_df) +
   xlab("C")
 
 p + labs(
-    title = "Prior Posterior update: C parameter",
-    caption = "Prior (blue) and posterior (red)"
-  )
+  title = "Prior Posterior update: C parameter",
+  caption = "Prior (blue) and posterior (red)"
+)
 
 ggsave("figs/gcm/parameter_recovery/pos-prior-update-c.png", p,
   width = 7, height = 5
@@ -84,15 +84,14 @@ recovery_df %>%
 ```{r}
 ggplot(data = recovery_df) +
   geom_density(aes(x = c, fill = w_parameter), alpha = .5) +
-  # geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
+  geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
   theme_bw() +
-  facet_wrap(. ~ c_parameter, scales = "free") +
+  facet_wrap(. ~ c_parameter) +
   scale_fill_manual(values = c("darkorange2", "purple")) +
   labs(
     x = "c",
     fill = "w parameters"
   ) +
-  ylim(0, 190) + xlim(0, 0.1) +
   theme(legend.position = "bottom")
 
 ggsave("figs/gcm/parameter_recovery/pos-c_by_w.png",
@@ -103,15 +102,14 @@ ggsave("figs/gcm/parameter_recovery/pos-c_by_w.png",
 ```{r}
 ggplot(data = recovery_df) +
   geom_density(aes(x = c, fill = nobservations), alpha = .5) +
-  # geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
+  geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
   theme_bw() +
-  facet_wrap(. ~ c_parameter, scales = "free") +
+  facet_wrap(. ~ c_parameter) +
   scale_fill_brewer(palette = "Dark2") +
   labs(
     x = "c",
     fill = "Number of observations"
   ) +
-  ylim(0, 500) + xlim(0, 0.1) +
   theme(legend.position = "bottom")
 
 ggsave("figs/gcm/parameter_recovery/pos-c_by_nobs.png",
@@ -132,8 +130,9 @@ for (c_param in c_parameters) {
       weights <- recovery_df %>%
         filter(
           c_parameter == c_param &
-          w_parameter == w_params &
-          nobservations == nobs) %>%
+            w_parameter == w_params &
+            nobservations == nobs
+        ) %>%
         pivot_longer(
           c("w_1", "w_2", "w_3", "w_4", "w_5"),
           names_to = "features", values_to = "weights"
@@ -143,23 +142,24 @@ for (c_param in c_parameters) {
         mutate(
           w_parameter = as.numeric(
             str_split(w_params, ",")[[1]]
-            )[as.integer(feature_number)],
+          )[as.integer(feature_number)],
           w_param_cond = w_params,
           c_parameter = c_param,
           nobservations = nobs
         )
-      
+
       weights_prior <- recovery_df %>%
         filter(
           c_parameter == c_param &
-          w_parameter == w_params &
-          nobservations == nobs) %>%
+            w_parameter == w_params &
+            nobservations == nobs
+        ) %>%
         pivot_longer(
           c("w_prior_1", "w_prior_2", "w_prior_3", "w_prior_4", "w_prior_5"),
           names_to = "features", values_to = "weights_prior"
         ) %>%
         select(c(weights_prior))
-      
+
       tmp <- cbind(weights, weights_prior)
 
       if (exists("weights_draws_df")) {
@@ -201,13 +201,14 @@ weights_draws_df %>%
   geom_vline(
     aes(xintercept = w_parameter),
     linetype = "dashed"
-    ) +
+  ) +
   theme_bw() +
   labs(x = "weight") +
   facet_wrap(. ~ feature_number)
 
 ggsave("figs/gcm/parameter_recovery/pos-prior-update_w_1.png",
-       width = 7, height = 5) 
+  width = 7, height = 5
+)
 ```
 
 ```{r}
@@ -225,13 +226,14 @@ weights_draws_df %>%
   geom_vline(
     aes(xintercept = w_parameter),
     linetype = "dashed"
-    ) +
+  ) +
   theme_bw() +
   labs(x = "weight") +
   facet_wrap(. ~ feature_number)
 
 ggsave("figs/gcm/parameter_recovery/pos-prior-update_w_2.png",
-       width = 7, height = 5)
+  width = 7, height = 5
+)
 ```
 
 ```{r}
@@ -245,7 +247,7 @@ ggplot(data = weights_draws_df) +
   geom_vline(
     aes(xintercept = w_parameter, color = w_param_cond),
     linetype = "dashed"
-    ) +
+  ) +
   theme_bw() +
   facet_wrap(. ~ feature_number) +
   scale_fill_manual(values = c("darkorange2", "purple")) +
@@ -258,7 +260,8 @@ ggplot(data = weights_draws_df) +
   theme(legend.position = "bottom")
 
 ggsave("figs/gcm/parameter_recovery/pos_w_parameters.png",
-       width = 7, height = 5)
+  width = 7, height = 5
+)
 ```
 
 ```{r}
@@ -282,7 +285,8 @@ weights_draws_df %>%
   theme(legend.position = "bottom")
 
 ggsave("figs/gcm/parameter_recovery/pos-w_1_by_c.png",
-       width = 7, height = 5)
+  width = 7, height = 5
+)
 ```
 
 ```{r}
@@ -306,7 +310,8 @@ weights_draws_df %>%
   theme(legend.position = "bottom")
 
 ggsave("figs/gcm/parameter_recovery/pos-w_2_by_c.png",
-       width = 7, height = 5)
+  width = 7, height = 5
+)
 ```
 
 ```{r}
@@ -329,7 +334,8 @@ weights_draws_df %>%
   theme(legend.position = "bottom")
 
 ggsave("figs/gcm/parameter_recovery/pos-w_1_by_nobs.png",
-       width = 7, height = 5)
+  width = 7, height = 5
+)
 ```
 
 ```{r}
@@ -352,7 +358,8 @@ weights_draws_df %>%
   theme(legend.position = "bottom")
 
 ggsave("figs/gcm/parameter_recovery/pos-w_2_by_nobs.png",
-       width = 7, height = 5)
+  width = 7, height = 5
+)
 ```
 
 ## Reinforcement Learning
@@ -551,7 +558,7 @@ p1 <- ggplot(data = recovery_df) +
   scale_fill_brewer(palette = "Dark2") +
   theme(legend.position = "bottom")
 
-p + labs(title = "Posterior update: Alpha_negative")
+p1 + labs(title = "Posterior update: Alpha_negative")
 ggsave("figs/rl/parameter_recovery/pos-alpha-neg_by_nobs.png", p1,
   width = 7, height = 5
 )
@@ -574,7 +581,7 @@ p2 <- ggplot(data = recovery_df) +
   scale_fill_brewer(palette = "Dark2") +
   theme(legend.position = "bottom")
 
-p + labs(title = "Posterior update: Alpha_positive")
+p2 + labs(title = "Posterior update: Alpha_positive")
 ggsave("figs/rl/parameter_recovery/pos-alpha-pos_by_nobs.png", p2,
   width = 7, height = 5
 )
@@ -605,7 +612,7 @@ p1 <- ggplot(data = recovery_df) +
   ) +
   theme(legend.position = "bottom")
 
-p + labs(title = "Posterior update: Alpha_negative")
+p1 + labs(title = "Posterior update: Alpha_negative")
 ggsave("figs/rl/parameter_recovery/pos-alpha-neg_by_temp.png", p1,
   width = 7, height = 5
 )
@@ -630,7 +637,7 @@ p2 <- ggplot(data = recovery_df) +
   ) +
   theme(legend.position = "bottom")
 
-p + labs(title = "Posterior update: Alpha_positive")
+p2 + labs(title = "Posterior update: Alpha_positive")
 ggsave("figs/rl/parameter_recovery/pos-alpha-pos_by_temp.png", p2,
   width = 7, height = 5
 )
