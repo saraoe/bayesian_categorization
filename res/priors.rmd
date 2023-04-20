@@ -18,7 +18,7 @@ c parameter
 grid <- 100
 ncs <- 11
 
-distances <- seq(from = 0, to = 5, length.out = grid)
+distances <- seq(from = 0, to = 1, length.out = grid)
 cs <- seq(from = 0, to = 2, length.out = ncs)
 
 tibble(
@@ -47,7 +47,7 @@ grid <- 100
 ntemps <- 11
 
 values <- seq(from = -1, to = 1, length.out = grid)
-temperatures <- seq(from = 0, to = 5, length.out = ntemps)
+temperatures <- seq(from = 0, to = 3, length.out = ntemps)
 
 tibble(
     value = rep(values, each = ntemps),
