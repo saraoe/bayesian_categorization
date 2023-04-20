@@ -10,39 +10,9 @@ pacman::p_load(
 
 ```{r}
 # load data
-indexes <- c(1, 2, 3)
-true_models <- c("gcm", "rl", "rl_simple")
-
-for (i in indexes) {
-    for (true_model in true_models) {
-        tmp_compare <- read_csv(paste(
-            "data/recovery/model_recovery_loo_compare_",
-            true_model, "_", i, ".csv", sep = ""
-        ))
-
-        if (exists("compare_df")) {
-            compare_df <- rbind(compare_df, tmp_compare)
-        } else {
-            compare_df <- tmp_compare
-        }
-
-        tmp_pointwise <- read_csv(paste(
-            "data/recovery/model_recovery_loo_pointwise_",
-            true_model, "_", i, ".csv", sep = ""
-        )) %>% 
-            mutate(
-                trial = rep(seq_len(104), 3)
-            )
-
-        if (exists("pointwise_df")) {
-            pointwise_df <- rbind(pointwise_df, tmp_pointwise)
-        } else {
-            pointwise_df <- tmp_pointwise
-        }
-    }
-}
-
-rm(tmp_compare, tmp_pointwise)
+compare_df <- read_csv("data/recovery/model_recovery_compare.csv") %>%
+    select(!c("...1"))
+pointwise_df <- read_csv("data/recovery/model_recovery_pointwise.csv")
 
 # add model names for plotting and NA for inf pareto k values
 model_names <- list(
@@ -94,7 +64,7 @@ ggplot(data = pointwise_df) +
         y = "Pareto k",
         color = "Model"
     ) +
-    scale_color_manual(values = c("brown", "steelblue", "darkgreen"))
+    scale_color_brewer(palette = "Dark2")
 
 ggsave("figs/model_recovery/psis_diagnostics.png",
        width = 7, height = 5)
@@ -102,15 +72,15 @@ ggsave("figs/model_recovery/psis_diagnostics.png",
 
 ## compare
 ```{r}
-compare_df %>% 
+compare_df %>%
     filter(true_model == "gcm") %>%
     select(model, looic, index)
 
-compare_df %>% 
+compare_df %>%
     filter(true_model == "rl") %>%
     select(model, looic, index)
 
-compare_df %>% 
+compare_df %>%
     filter(true_model == "rl_simple") %>%
     select(model, looic, index)
 
