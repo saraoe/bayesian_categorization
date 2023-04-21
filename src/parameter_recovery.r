@@ -60,7 +60,7 @@ print("RUNNING PARAMETER RECOVERY")
 
 if (model == "gcm") {
   # parameters
-  c_parameters <- seq(from = 0, to = 2, length.out = 6)
+  c_parameters <- seq(from = 0, to = 5, length.out = 6)
   w_parameters <- c("1,0,0,0,0", "0.2,0.2,0.2,0.2,0.2")
 
   for (c in c_parameters) {
@@ -87,7 +87,7 @@ if (model == "gcm") {
 if (model == "rl") {
   # parameters
   alpha_parameters <- seq(from = 0, to = 1, length.out = 4)
-  temp_parameters <- seq(from = 0, to = 3, length.out = 4)
+  temp_parameters <- c(0.1, 1, 2, 3)
 
   for (alpha_pos in alpha_parameters) {
     for (alpha_neg in alpha_parameters) {
@@ -124,8 +124,8 @@ if (model == "rl") {
 
 if (model == "rl_simple") {
   # parameters
-  alpha_parameters <- seq(from = 0, to = 1, length.out = 4)
-  temp_parameters <- seq(from = 0, to = 3, length.out = 4)
+  alpha_parameters <- seq(from = 0.1, to = 1, length.out = 4)
+  temp_parameters <- c(0.1, 1, 2, 3)
 
   for (alpha in alpha_parameters) {
     for (temp in temp_parameters) {
