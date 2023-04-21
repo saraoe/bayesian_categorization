@@ -43,6 +43,13 @@ df <- read_csv("data/AlienData.csv") %>%
         )
     )
 
+# fit models
+model_number <- list(
+    "1" = "gcm",
+    "2" = "rl",
+    "3" = "rl_simple"
+)
+
 for (sub in unique(df$subject)) {
     print(paste("Subject =", sub))
 
@@ -163,19 +170,29 @@ for (sub in unique(df$subject)) {
 
     # compare loo
     print("Compare:")
-    compare <- loo_compare(gcm_loo, rl_loo, rl_simple_loo)
-    print(compare)
-
-    compare <- as.data.frame(compare)
-    compare$condition <- ifelse(sub > 100, 2, 1)
-    compare$subject <- sub
-    compare$session <- ses
-
+    tmp_compare <- loo_compare(list(gcm_loo, rl_loo, rl_simple_loo))
+    tmp_model_weights <- loo_model_weights(list(gcm_loo, rl_loo, rl_simple_loo))
+    print(tmp_compare)
+    print(tmp_model_weights)
+    
+    tmp_model_weights <- as.list(tmp_model_weights)
+    tmp_compare <- as.data.frame(tmp_compare) %>%
+        tibble::rownames_to_column("model") %>%
+        mutate(
+            condition = ifelse(sub > 100, 2, 1),
+            subject = sub,
+            session = ses,
+            model_weights = as.numeric(tmp_model_weights[model]),
+            model = str_extract(model, "\\d"),
+            model = as.character(model_number[model]),
+        )
+    
     if (exists("compare_df")) {
-        compare_df <- rbind(compare_df, compare)
+        compare_df <- rbind(compare_df, tmp_compare)
     } else {
-        compare_df <- compare
+        compare_df <- tmp_compare
     }
+    
 }
 print("------------")
 

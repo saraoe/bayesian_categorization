@@ -32,6 +32,12 @@ print("--------------")
 print(paste("Running true", true_model))
 print("--------------")
 
+model_number <- list(
+    "1" = "gcm",
+    "2" = "rl",
+    "3" = "rl_simple"
+)
+
 for (index in seq_len(26)) {
     print(paste("Index:", index))
     
@@ -46,7 +52,7 @@ for (index in seq_len(26)) {
     ## Parameters and Simulate responses ##
     print("True parameters:")
     if (true_model == "gcm") {
-        c <- runif(1, min = 0.1, max = 2)
+        c <- runif(1, min = 0.1, max = 5)
         print(paste("c =", c))
         w <- as.vector(rdirichlet(1, rep(1,5)))
         print(paste("w =", w))
@@ -175,11 +181,21 @@ for (index in seq_len(26)) {
     # compare
     print("Compare:")
     tmp_compare <- loo_compare(list(gcm_loo, rl_loo, rl_simple_loo))
+    tmp_model_weights <- loo_model_weights(list(gcm_loo, rl_loo, rl_simple_loo))
     print(tmp_compare)
+    print(tmp_model_weights)
     
-    tmp_compare <- as.data.frame(tmp_compare)
-    tmp_compare$true_model <- true_model
-    tmp_compare$index <- index
+    tmp_model_weights <- as.list(tmp_model_weights)
+    tmp_compare <- as.data.frame(tmp_compare) %>%
+        tibble::rownames_to_column("model") %>%
+        mutate(
+            index = index,
+            true_model = true_model,
+            model_weights = as.numeric(tmp_model_weights[model]),
+            model = str_extract(model, "\\d"),
+            model = as.character(model_number[model]),
+        )
+
     if (exists("compare_df")) {
         compare_df <- rbind(compare_df, tmp_compare)
     } else {
