@@ -6,12 +6,12 @@ library(pacman)
 pacman::p_load(
     tidyverse
 )
+
 ```
 
 ```{r}
 # load data
-compare_df <- read_csv("data/recovery/model_recovery_compare.csv") %>%
-    select(!c("...1"))
+compare_df <- read_csv("data/recovery/model_recovery_compare.csv")
 pointwise_df <- read_csv("data/recovery/model_recovery_pointwise.csv")
 
 # add model names for plotting and NA for inf pareto k values
@@ -30,20 +30,8 @@ pointwise_df <- pointwise_df %>%
             )
     )
 
-# add model names instead of numbers
-model_number <- list(
-    "1" = "gcm",
-    "2" = "rl",
-    "3" = "rl_simple"
-)
-
-colnames(compare_df) <- c(
-    "model", colnames(compare_df)[2:ncol(compare_df)]
-)
 compare_df <- compare_df %>%
     mutate(
-        model = str_extract(model, "\\d"),
-        model = as.character(model_number[model]),
         model_name = as.character(model_names[model])
     )
 ```
@@ -95,6 +83,10 @@ compare_df <- compare_df %>%
         model_rank = ifelse(
             looic == min(looic), 1,
             ifelse(looic == max(looic), 3, 2)
+        ),
+        true_model_rank = ifelse(
+            model == true_model,
+            1, 0
         )
     )
 
@@ -102,8 +94,41 @@ compare_df %>%
     group_by(true_model, model) %>%
     summarize(
         mean(model_rank == 1),
-        sum(model_rank == 1)
+        sum(model_rank == 1),
+        mean(model_weights),
+        sd(model_weights)
     )
+```
+
+```{r}
+cm <- compare_df %>%
+    group_by(true_model, model) %>%
+    summarize(
+        freq = sum(model_rank == 1)
+        ) %>%
+    mutate(
+        model = factor(model_names[model],
+            level = c(
+                "RL Simple", "RL Asymmetrical", "GCM"
+            )),
+        true_model = factor(model_names[true_model],
+            level = c(
+                "GCM", "RL Asymmetrical", "RL Simple"
+            ))
+    )
+
+ggplot(cm, aes(true_model, model, fill = freq)) +
+        geom_tile() + geom_text(aes(label = freq)) +
+        theme_bw() +
+        scale_fill_gradient(low = "white", high = "steelblue") +
+        labs(
+            x = "True Model",
+            y = "Best Model Fit"
+        ) +
+        theme(legend.position = "none")
+
+ggsave("figs/model_recovery/model_rank_confusion_matrix.png",
+       width = 7, height = 7)
 ```
 
 ## elpd diff
