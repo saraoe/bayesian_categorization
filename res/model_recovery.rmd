@@ -6,7 +6,6 @@ library(pacman)
 pacman::p_load(
     tidyverse
 )
-
 ```
 
 ```{r}
@@ -27,7 +26,7 @@ pointwise_df <- pointwise_df %>%
         model_name = as.character(model_names[model]),
         influence_pareto_k = ifelse(
             is.infinite(influence_pareto_k), NA, influence_pareto_k
-            )
+        )
     )
 
 compare_df <- compare_df %>%
@@ -40,14 +39,21 @@ compare_df <- compare_df %>%
 ```{r}
 ggplot(data = pointwise_df) +
     geom_point(aes(x = trial, y = influence_pareto_k, color = model_name),
-                alpha = .2) +
+        alpha = .2
+    ) +
     facet_wrap(. ~ true_model_names) +
-    geom_hline(yintercept = 0,
-               linetype = "dashed", linewidth = 1) +
-    geom_hline(yintercept = 0.5,
-               linetype = "dashed", linewidth = 1) +
-    geom_hline(yintercept = 0.7,
-               linetype = "dashed", linewidth = 1) +
+    geom_hline(
+        yintercept = 0,
+        linetype = "dashed", linewidth = 1
+    ) +
+    geom_hline(
+        yintercept = 0.5,
+        linetype = "dashed", linewidth = 1
+    ) +
+    geom_hline(
+        yintercept = 0.7,
+        linetype = "dashed", linewidth = 1
+    ) +
     theme_bw() +
     labs(
         x = "",
@@ -57,7 +63,8 @@ ggplot(data = pointwise_df) +
     scale_color_brewer(palette = "Dark2")
 
 ggsave("figs/model_recovery/psis_diagnostics.png",
-       width = 7, height = 5)
+    width = 7, height = 5
+)
 ```
 
 ## compare
@@ -73,7 +80,6 @@ compare_df %>%
 compare_df %>%
     filter(true_model == "rl_simple") %>%
     select(model, looic, index)
-
 ```
 
 ```{r}
@@ -105,30 +111,34 @@ cm <- compare_df %>%
     group_by(true_model, model) %>%
     summarize(
         freq = sum(model_rank == 1)
-        ) %>%
+    ) %>%
     mutate(
         model = factor(model_names[model],
             level = c(
                 "RL Simple", "RL Asymmetrical", "GCM"
-            )),
+            )
+        ),
         true_model = factor(model_names[true_model],
             level = c(
                 "GCM", "RL Asymmetrical", "RL Simple"
-            ))
+            )
+        )
     )
 
 ggplot(cm, aes(true_model, model, fill = freq)) +
-        geom_tile() + geom_text(aes(label = freq)) +
-        theme_bw() +
-        scale_fill_gradient(low = "white", high = "steelblue") +
-        labs(
-            x = "True Model",
-            y = "Best Model Fit"
-        ) +
-        theme(legend.position = "none")
+    geom_tile() +
+    geom_text(aes(label = freq)) +
+    theme_bw() +
+    scale_fill_gradient(low = "white", high = "steelblue") +
+    labs(
+        x = "True Model",
+        y = "Best Model Fit"
+    ) +
+    theme(legend.position = "none")
 
 ggsave("figs/model_recovery/model_rank_confusion_matrix.png",
-       width = 7, height = 7)
+    width = 7, height = 7
+)
 ```
 
 ## elpd diff
@@ -146,9 +156,12 @@ elpd_diff <- pointwise_df %>%
 ```{r}
 ggplot(data = elpd_diff) +
     geom_point(aes(x = trial, y = rl_asym_rl_simple_diff),
-                alpha = .2) +
-    geom_hline(yintercept = 0, color = "orange",
-               linetype = "dashed", linewidth = 1) +
+        alpha = .2
+    ) +
+    geom_hline(
+        yintercept = 0, color = "orange",
+        linetype = "dashed", linewidth = 1
+    ) +
     facet_wrap(. ~ true_model_names) +
     theme_bw() +
     labs(
@@ -157,15 +170,19 @@ ggplot(data = elpd_diff) +
     )
 
 ggsave("figs/model_recovery/elpd_diff_rl_asym_rl_simple.png",
-       width = 7, height = 5)
+    width = 7, height = 5
+)
 ```
 
 ```{r}
 ggplot(data = elpd_diff) +
     geom_point(aes(x = trial, y = rl_asym_gcm_diff),
-                alpha = .2) +
-    geom_hline(yintercept = 0, color = "orange",
-               linetype = "dashed", linewidth = 1) +
+        alpha = .2
+    ) +
+    geom_hline(
+        yintercept = 0, color = "orange",
+        linetype = "dashed", linewidth = 1
+    ) +
     facet_wrap(. ~ true_model_names) +
     theme_bw() +
     labs(
@@ -174,15 +191,19 @@ ggplot(data = elpd_diff) +
     )
 
 ggsave("figs/model_recovery/elpd_diff_rl_asym_gcm.png",
-       width = 7, height = 5)
+    width = 7, height = 5
+)
 ```
 
 ```{r}
 ggplot(data = elpd_diff) +
     geom_point(aes(x = trial, y = rl_simple_gcm_diff),
-                alpha = .2) +
-    geom_hline(yintercept = 0, color = "orange",
-               linetype = "dashed", linewidth = 1) +
+        alpha = .2
+    ) +
+    geom_hline(
+        yintercept = 0, color = "orange",
+        linetype = "dashed", linewidth = 1
+    ) +
     facet_wrap(. ~ true_model_names) +
     theme_bw() +
     labs(
@@ -191,5 +212,6 @@ ggplot(data = elpd_diff) +
     )
 
 ggsave("figs/model_recovery/elpd_diff_rl_simple_gcm.png",
-       width = 7, height = 5)
+    width = 7, height = 5
+)
 ```
