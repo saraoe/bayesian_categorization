@@ -1,0 +1,445 @@
+# Model validation
+
+## libraries
+```{r}
+library(pacman)
+pacman::p_load(
+    tidyverse,
+    latex2exp,
+    patchwork
+)
+
+source("src/util.r")
+```
+
+## GCM
+### load data
+```{r}
+weights_names <- list(
+    "1,0,0,0,0" = "Optimal",
+    "0.2,0.2,0.2,0.2,0.2" = "Equal",
+    "0.5,0.5,0,0,0" = "Skewed"
+)
+
+response_df <- read_csv(
+    "data/recovery/model_validation_responses_gcm.csv"
+) %>%
+    group_by(c, ws) %>%
+    mutate(
+        correct = ifelse(response == true_cat, 1, 0),
+        cumulative = cumsum(correct) / trial,
+        w_name = as.character(weights_names[ws])
+    )
+
+draws_df <- read_csv(
+    "data/recovery/model_validation_samples_gcm.csv"
+) %>%
+    mutate(
+        chain = as.factor(.chain)
+    )
+
+colnames(draws_df) <- update_colnames(colnames(draws_df))
+```
+
+### samples
+chains
+```{r}
+p1 <- ggplot(draws_df) +
+    geom_line(aes(.iteration, c, color = chain)) +
+    theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = "c")
+
+p2 <- ggplot(draws_df) +
+    geom_line(aes(.iteration, w_1, color = chain)) +
+    theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$w_1$"))
+
+p3 <- ggplot(draws_df) +
+    geom_line(aes(.iteration, w_2, color = chain)) +
+    theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$w_2$"))
+
+p4 <- ggplot(draws_df) +
+    geom_line(aes(.iteration, w_3, color = chain)) +
+    theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$w_3$"))
+
+p5 <- ggplot(draws_df) +
+    geom_line(aes(.iteration, w_4, color = chain)) +
+    theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$w_4$"))
+
+p6 <- ggplot(draws_df) +
+    geom_line(aes(.iteration, w_5, color = chain)) +
+    theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$w_5$"))
+
+(p1 + p2) / (p3 + p4) / (p5 + p6) +
+    plot_layout(guides = "collect")
+
+ggsave("figs/gcm/model_validation/chains.png",
+    width = 7, height = 7
+)
+```
+
+prior posterior updates
+```{r}
+ggplot(data = draws_df) +
+    geom_density(aes(x = c_prior),
+        fill = "blue", alpha = .5
+    ) +
+    geom_density(aes(x = c),
+        fill = "red", alpha = .5
+    ) +
+    theme_bw() +
+    labs(x = "c")
+
+ggsave("figs/gcm/model_validation/prior-pos-update-c.png",
+    width = 7, height = 5
+)
+```
+
+```{r}
+weights <- draws_df %>%
+    pivot_longer(
+        c("w_1", "w_2", "w_3", "w_4", "w_5"),
+        names_to = "features", values_to = "weights"
+    ) %>%
+    mutate(feature_number = str_extract(features, "\\d+")) %>%
+    select(c(feature_number, weights))
+
+weights_prior <- draws_df %>%
+    pivot_longer(
+        c("w_prior_1", "w_prior_2", "w_prior_3", "w_prior_4", "w_prior_5"),
+        names_to = "features", values_to = "weights_prior"
+    ) %>%
+    select(c(weights_prior))
+
+weights_draws_df <- cbind(weights, weights_prior)
+```
+
+```{r}
+ggplot(data = weights_draws_df) +
+    geom_density(aes(x = weights_prior),
+        fill = "blue", alpha = .5
+    ) +
+    geom_density(aes(x = weights),
+        fill = "red", alpha = .5
+    ) +
+    theme_bw() +
+    facet_wrap(. ~ feature_number) +
+    labs(x = "w")
+
+ggsave("figs/gcm/model_validation/prior-pos-update-w.png",
+    width = 7, height = 5
+)
+```
+
+### responses
+```{r}
+ggplot(data = response_df) +
+    geom_point(aes(x = trial, y = cumulative, color = w_name),
+        alpha = .3
+    ) +
+    geom_smooth(aes(x = trial, y = cumulative, color = w_name)) +
+    theme_bw() +
+    facet_wrap(. ~ c) +
+    labs(
+        color = "w"
+    ) +
+    scale_color_brewer(palette = "Dark2")
+
+ggsave("figs/gcm/model_validation/responses_cumulative.png",
+    width = 7, height = 10
+)
+```
+
+## RL
+### load data
+```{r}
+response_df <- read_csv(
+    "data/recovery/model_validation_responses_rl.csv"
+) %>%
+    group_by(alpha_pos, alpha_neg, temp) %>%
+    mutate(
+        correct = ifelse(response == true_cat, 1, 0),
+        cumulative = cumsum(correct) / trial,
+        alpha_neg_round = round(alpha_neg, 3),
+        alpha_pos_round = round(alpha_pos, 3),
+        temp_round = round(temp, 3),
+        temp_round = as.factor(temp_round)
+    )
+
+draws_df <- read_csv(
+    "data/recovery/model_validation_samples_rl.csv"
+) %>%
+    mutate(
+        chain = as.factor(.chain)
+    )
+
+colnames(draws_df) <- update_colnames(colnames(draws_df))
+```
+
+### samples
+chains
+```{r}
+p1 <- ggplot(draws_df) +
+    geom_line(aes(.iteration, temp, color = chain)) +
+    theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$\\tau$"))
+
+p2 <- ggplot(draws_df) +
+    geom_line(aes(.iteration, alpha_neg, color = chain)) +
+    theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$\\alpha_-$"))
+
+p3 <- ggplot(draws_df) +
+    geom_line(aes(.iteration, alpha_pos, color = chain)) +
+    theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$\\alpha_+$"))
+
+
+p1 / p2 / p3 +
+    plot_layout(guides = "collect")
+
+ggsave("figs/rl/model_validation/chains.png",
+    width = 7, height = 7
+)
+```
+
+```{r}
+p1 <- ggplot(draws_df) +
+    geom_point(
+        aes(alpha_neg, alpha_pos, color = chain),
+        alpha = 0.5
+    ) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    theme_bw() +
+    labs(
+        x = latex2exp::TeX("$\\alpha_-$"),
+        y = latex2exp::TeX("$\\alpha_+$")
+        )
+
+p2 <- ggplot(draws_df) +
+    geom_point(
+        aes(alpha_neg, temp, color = chain),
+        alpha = 0.5
+    ) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    theme_bw() +
+    labs(
+        x = latex2exp::TeX("$\\alpha_-$"),
+        y = latex2exp::TeX("$\\tau$")
+        )
+
+p3 <- ggplot(draws_df) +
+    geom_point(
+        aes(alpha_pos, temp, color = chain),
+        alpha = 0.5
+    ) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    theme_bw() +
+    labs(x = latex2exp::TeX("$\\alpha_+$"),
+    y = latex2exp::TeX("$\\tau$")
+    )
+
+p1 / (p2 + p3)
+
+ggsave("figs/rl/model_validation/chains_correlation.png", width = 7, height = 7)
+```
+
+prior posterior update
+```{r}
+ggplot(data = draws_df) +
+    geom_density(aes(x = alpha_neg_prior),
+        fill = "blue", alpha = .5
+    ) +
+    geom_density(aes(x = alpha_neg),
+        fill = "red", alpha = .5
+    ) +
+    theme_bw() +
+    labs(x = latex2exp::TeX("$\\alpha_-$"))
+
+ggsave("figs/rl/model_validation/prior-pos-update-alpha_neg.png",
+    width = 7, height = 5
+)
+```
+
+```{r}
+ggplot(data = draws_df) +
+    geom_density(aes(x = alpha_pos_prior),
+        fill = "blue", alpha = .5
+    ) +
+    geom_density(aes(x = alpha_pos),
+        fill = "red", alpha = .5
+    ) +
+    theme_bw() +
+    labs(x = latex2exp::TeX("$\\alpha_+$"))
+
+ggsave("figs/rl/model_validation/prior-pos-update-alpha_pos.png",
+    width = 7, height = 5
+)
+```
+
+```{r}
+ggplot(data = draws_df) +
+    geom_density(aes(x = temp_prior),
+        fill = "blue", alpha = .5
+    ) +
+    geom_density(aes(x = temp),
+        fill = "red", alpha = .5
+    ) +
+    theme_bw() +
+    labs(x = latex2exp::TeX("$\\tau$"))
+
+ggsave("figs/rl/model_validation/prior-pos-update-temp.png",
+    width = 7, height = 5
+)
+```
+
+
+### responses
+```{r}
+ggplot(data = response_df) +
+    geom_point(aes(x = trial, y = cumulative, color = temp_round),
+        alpha = .3
+    ) +
+    geom_smooth(aes(x = trial, y = cumulative, color = temp_round)) +
+    theme_bw() +
+    facet_wrap(alpha_pos_round ~ alpha_neg_round) +
+    labs(
+        color = latex2exp::TeX("$\\tau$")
+    ) +
+    scale_color_brewer(palette = "PuOr")
+
+ggsave("figs/rl/model_validation/responses_cumulative.png",
+    width = 7, height = 10
+)
+```
+
+# RL simple
+## load data
+```{r}
+response_df <- read_csv(
+    "data/recovery/model_validation_responses_rl_simple.csv"
+) %>%
+    group_by(alpha, temp) %>%
+    mutate(
+        correct = ifelse(response == true_cat, 1, 0),
+        cumulative = cumsum(correct) / trial,
+        alpha = as.factor(alpha),
+        temp_round = round(temp, 3)
+    )
+
+draws_df <- read_csv(
+    "data/recovery/model_validation_samples_rl_simple.csv"
+) %>%
+    mutate(
+        chain = as.factor(.chain)
+    )
+
+colnames(draws_df) <- update_colnames(colnames(draws_df))
+```
+
+### samples
+chains
+```{r}
+p1 <- ggplot(draws_df) +
+    geom_line(aes(.iteration, temp, color = chain)) +
+    theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$\\tau$"))
+
+p2 <- ggplot(draws_df) +
+    geom_line(aes(.iteration, alpha, color = chain)) +
+    theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$\\alpha$"))
+
+
+p1 / p2 +
+    plot_layout(guides = "collect")
+
+ggsave("figs/rl_simple/model_validation/chains.png",
+    width = 7, height = 7
+)
+```
+
+```{r}
+ggplot(draws_df) +
+    geom_point(
+        aes(alpha, temp, color = chain),
+        alpha = 0.5
+    ) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    theme_bw() +
+    labs(
+        x = latex2exp::TeX("$\\alpha$"),
+        y = latex2exp::TeX("$\\tau$")
+        )
+
+
+ggsave("figs/rl_simple/model_validation/chains_correlation.png",
+       width = 7, height = 7)
+```
+
+prior posterior update
+```{r}
+ggplot(data = draws_df) +
+    geom_density(aes(x = alpha_prior),
+        fill = "blue", alpha = .5
+    ) +
+    geom_density(aes(x = alpha),
+        fill = "red", alpha = .5
+    ) +
+    theme_bw() +
+    labs(x = latex2exp::TeX("$\\alpha$"))
+
+ggsave("figs/rl_simple/model_validation/prior-pos-update-alpha_neg.png",
+    width = 7, height = 5
+)
+```
+
+```{r}
+ggplot(data = draws_df) +
+    geom_density(aes(x = temp_prior),
+        fill = "blue", alpha = .5
+    ) +
+    geom_density(aes(x = temp),
+        fill = "red", alpha = .5
+    ) +
+    theme_bw() +
+    labs(x = latex2exp::TeX("$\\tau$"))
+
+ggsave("figs/rl_simple/model_validation/prior-pos-update-temp.png",
+    width = 7, height = 5
+)
+```
+
+## responses
+```{r}
+ggplot(data = response_df) +
+    geom_point(aes(x = trial, y = cumulative, color = alpha),
+        alpha = .3
+    ) +
+    geom_smooth(aes(x = trial, y = cumulative, color = alpha)) +
+    theme_bw() +
+    facet_wrap(. ~ temp_round) +
+    labs(
+        color = latex2exp::TeX("$\\alpha$")
+    ) +
+    scale_color_brewer(palette = "PuOr")
+
+ggsave("figs/rl_simple/model_validation/cumulative_correct.png",
+    width = 7, height = 7
+)
+```
