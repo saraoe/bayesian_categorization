@@ -14,7 +14,7 @@ param_recov_gcm <- function(n_obs, n_features, type, w, c, seed = 101) {
   # make own simple categorization rule
   # f1 + f2 determines danger (resembles low complexity)
   if (type == "binary") {
-    danger <- ifelse(observations$f1 == 1 & observations$f2 == 1, 1, 0)
+    danger <- ifelse(observations$f1 == 1, 1, 0)
   } else if (type == "continuous") {
     danger <- ifelse(observations$f1 > .5 & observations$f2 > .5, 1, 0)
   }
