@@ -1,44 +1,12 @@
 ## gather samples ##
 
-# load packages 
+# load packages
 library(pacman)
 pacman::p_load(
   tidyverse
 )
 
-# functions 
-# updating colnames
-update_colnames <- function(df) {
-  new_colnames <- c()
-  for (colname in colnames(draws_df)) {
-    if (grepl("values_prior", colname, fixed = TRUE)) { # specific case
-      new_colname <- paste("values_prior_",
-                           str_extract_all(colname, "\\d+")[[1]][1], "_",
-                           str_extract_all(colname, "\\d+")[[1]][2],
-                           sep = ""
-      )
-      new_colnames <- c(new_colnames, new_colname)
-    } else if (grepl(",", colname, fixed = TRUE)) { # matrix
-      new_colname <- paste(str_extract(colname, "\\w+"), "_",
-                           str_extract_all(colname, "\\d+")[[1]][1], "_",
-                           str_extract_all(colname, "\\d+")[[1]][2],
-                           sep = ""
-      )
-      new_colnames <- c(new_colnames, new_colname)
-    } else if (grepl("[", colname, fixed = TRUE)) { # array
-      new_colname <- paste(str_extract(colname, "\\w+"), "_",
-                           str_extract(colname, "\\d+"),
-                           sep = ""
-      )
-      new_colnames <- c(new_colnames, new_colname)
-    } else {
-      new_colnames <- c(new_colnames, colname)
-    }
-  }
-  
-  return(new_colnames)
-}
-
+source("src/util.r")
 
 # relevant columns
 relevant_col_names <- function(model_name) {
@@ -48,10 +16,10 @@ relevant_col_names <- function(model_name) {
       ".iteration", ".chain",
       "condition", "subject", "session"
     )
-    
+
     for (f in seq_len(5)) {
-      weight = paste("w[", f, "]", sep = "")
-      weight_prior = paste("w_prior[", f, "]", sep = "")
+      weight <- paste("w[", f, "]", sep = "")
+      weight_prior <- paste("w_prior[", f, "]", sep = "")
       relevant_cols <- c(
         relevant_cols,
         weight, weight_prior
@@ -65,7 +33,6 @@ relevant_col_names <- function(model_name) {
       ".iteration", ".chain",
       "condition", "subject", "session"
     )
-    
   } else if (model_name == "rl_simple") {
     relevant_cols <- c(
       "alpha", "alpha_prior",
@@ -73,9 +40,8 @@ relevant_col_names <- function(model_name) {
       ".iteration", ".chain",
       "condition", "subject", "session"
     )
-    
   }
-  
+
   # add posterior correct
   for (t in seq_len(104)) {
     colname <- paste("posteriorcorrect[", t, "]", sep = "")
@@ -99,7 +65,7 @@ for (model in models) {
       mutate(
         session = ses
       )
-    
+
     if (exists("draws_df")) {
       draws_df <- rbind(draws_df, tmp_draws_df)
     } else {
@@ -108,12 +74,11 @@ for (model in models) {
   }
   # update colnames
   colnames(draws_df) <- update_colnames(draws_df)
-  
+
   # save df
   out_path <- paste("data/", model, "_samples.csv", sep = "")
   write.csv(draws_df, out_path)
   print(paste(model, "draws_df written to path:", out_path))
-  
+
   rm(draws_df)
 }
-

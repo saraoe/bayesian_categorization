@@ -38,3 +38,35 @@ simulate_observations <- function(n_obs, n_features, type) {
         return(continuous_observations(n_obs, n_features))
     }
 }
+
+# updating colnames
+update_colnames <- function(df) {
+  new_colnames <- c()
+  for (colname in colnames(draws_df)) {
+    if (grepl("values_prior", colname, fixed = TRUE)) { # specific case
+      new_colname <- paste("values_prior_",
+                           str_extract_all(colname, "\\d+")[[1]][1], "_",
+                           str_extract_all(colname, "\\d+")[[1]][2],
+                           sep = ""
+      )
+      new_colnames <- c(new_colnames, new_colname)
+    } else if (grepl(",", colname, fixed = TRUE)) { # matrix
+      new_colname <- paste(str_extract(colname, "\\w+"), "_",
+                           str_extract_all(colname, "\\d+")[[1]][1], "_",
+                           str_extract_all(colname, "\\d+")[[1]][2],
+                           sep = ""
+      )
+      new_colnames <- c(new_colnames, new_colname)
+    } else if (grepl("[", colname, fixed = TRUE)) { # array
+      new_colname <- paste(str_extract(colname, "\\w+"), "_",
+                           str_extract(colname, "\\d+"),
+                           sep = ""
+      )
+      new_colnames <- c(new_colnames, new_colname)
+    } else {
+      new_colnames <- c(new_colnames, colname)
+    }
+  }
+  
+  return(new_colnames)
+}
