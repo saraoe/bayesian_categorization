@@ -47,7 +47,7 @@ for (index in seq_len(26)) {
         n_features = 5,
         type = "binary"
     )
-    danger <- ifelse(observations$f1 == 1 & observations$f2 == 1, 1, 0)
+    danger <- ifelse(observations$f1 == 1, 1, 0)
 
     ## Parameters and Simulate responses ##
     print("True parameters:")
@@ -168,7 +168,9 @@ for (index in seq_len(26)) {
             draws_df <- as_draws_df(samples$draws())
             out_path <- paste(
                 "data/recovery/model_validation_samples_",
-                model, ".csv", sep = "")
+                model, ".csv",
+                sep = ""
+            )
             write.csv(draws_df, out_path)
             print(
                 paste("Samples from", model, "saved in", out_path)
