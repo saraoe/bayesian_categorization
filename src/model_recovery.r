@@ -40,7 +40,7 @@ model_number <- list(
 
 for (index in seq_len(26)) {
     print(paste("Index:", index))
-    
+
     ## Simulate Observations ##
     observations <- simulate_observations(
         n_obs = 104,
@@ -48,15 +48,15 @@ for (index in seq_len(26)) {
         type = "binary"
     )
     danger <- ifelse(observations$f1 == 1 & observations$f2 == 1, 1, 0)
-    
+
     ## Parameters and Simulate responses ##
     print("True parameters:")
     if (true_model == "gcm") {
         c <- runif(1, min = 0.1, max = 5)
         print(paste("c =", c))
-        w <- as.vector(rdirichlet(1, rep(1,5)))
+        w <- as.vector(rdirichlet(1, rep(1, 5)))
         print(paste("w =", w))
-    
+
         responses <- gcm(
             w = w,
             c = c,
@@ -72,7 +72,7 @@ for (index in seq_len(26)) {
         print(paste("alpha_neg =", alpha_neg))
         temp <- runif(1, min = 0.1, max = 3)
         print(paste("temperature =", temp))
-    
+
         responses <- reinforcement_learning(
             alpha_pos = alpha_pos,
             alpha_neg = alpha_neg,
@@ -85,7 +85,7 @@ for (index in seq_len(26)) {
         print(paste("alpha =", alpha))
         temp <- runif(1, min = 0.1, max = 3)
         print(paste("temperature =", temp))
-    
+
         responses <- reinforcement_learning(
             alpha_pos = alpha,
             alpha_neg = alpha,
@@ -95,13 +95,13 @@ for (index in seq_len(26)) {
         )
     }
     print("--------------")
-    
-    
+
+
     ## Load and Fit Models ##
-    
+
     for (model in c("gcm", "rl", "rl_simple")) {
         print(paste("Now fitting", model))
-    
+
         # compile model
         set_cmdstan_path("/work/MA_thesis/cmdstan-2.31.0")
         if (model == "gcm") {
@@ -115,7 +115,7 @@ for (index in seq_len(26)) {
             file,
             cpp_options = list(stan_threads = TRUE)
         )
-    
+
         if (model == "gcm") {
             data <- list(
                 ntrials = nrow(observations),
@@ -149,7 +149,7 @@ for (index in seq_len(26)) {
                 temp_prior_values = c(0, 1)
             )
         }
-    
+
         samples <- mod$sample(
             data = data,
             seed = 123,
@@ -162,11 +162,23 @@ for (index in seq_len(26)) {
             max_treedepth = 20,
             adapt_delta = 0.99
         )
-    
+
+        # save samples from first sim for model validation
+        if (index == 1) {
+            draws_df <- as_draws_df(samples$draws())
+            out_path <- paste(
+                "data/recovery/model_validation_samples_",
+                model, ".csv", sep = "")
+            write.csv(draws_df, out_path)
+            print(
+                paste("Samples from", model, "saved in", out_path)
+            )
+        }
+
         # loo
         samples_loo <- samples$loo(save_psis = TRUE, cores = 4)
         assign(paste(model, "_loo", sep = ""), samples_loo)
-    
+
         tmp <- as.data.frame(samples_loo$pointwise)
         tmp$model <- model
         tmp$index <- index
@@ -177,14 +189,14 @@ for (index in seq_len(26)) {
             loo_output_df <- tmp
         }
     }
-    
+
     # compare
     print("Compare:")
     tmp_compare <- loo_compare(list(gcm_loo, rl_loo, rl_simple_loo))
     tmp_model_weights <- loo_model_weights(list(gcm_loo, rl_loo, rl_simple_loo))
     print(tmp_compare)
     print(tmp_model_weights)
-    
+
     tmp_model_weights <- as.list(tmp_model_weights)
     tmp_compare <- as.data.frame(tmp_compare) %>%
         tibble::rownames_to_column("model") %>%
