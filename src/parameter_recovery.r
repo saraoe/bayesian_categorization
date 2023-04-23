@@ -13,8 +13,12 @@ index <- as.integer(args[2])
 n_obs <- as.integer(args[3])
 feature_type <- "binary"
 
-# Get a random seed
-seed <- sample(c(1:1000000), 1)
+# set seed
+if (index == 1) {
+  seed <- "1711"
+} else {
+  seed <- sample(c(1:1000000), 1)
+}
 set.seed(seed)
 
 print("--------------")
