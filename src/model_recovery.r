@@ -164,7 +164,7 @@ for (index in seq_len(26)) {
         )
 
         # save samples from first sim for model validation
-        if (index == 1) {
+        if (index == 1 && model == true_model) {
             draws_df <- as_draws_df(samples$draws())
             out_path <- paste(
                 "data/recovery/model_validation_samples_",
