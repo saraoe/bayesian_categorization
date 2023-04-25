@@ -37,6 +37,22 @@ compare_df <- compare_df %>%
 
 ## PSIS diagnostic
 ```{r}
+pointwise_df <- pointwise_df %>% 
+    mutate(
+        critical_psis = ifelse(
+            influence_pareto_k > .7 | is.na(influence_pareto_k),
+            1, 0
+        )
+    )
+
+pointwise_df %>%
+    group_by(model) %>%
+    summarize(
+        mean(critical_psis)
+    )
+```
+
+```{r}
 ggplot(data = pointwise_df) +
     geom_point(aes(x = trial, y = influence_pareto_k, color = model_name),
         alpha = .2
