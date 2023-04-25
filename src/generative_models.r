@@ -58,7 +58,7 @@ reinforcement_learning <- function(alpha_pos, alpha_neg, temp, observations, cat
     for (f in 1:nfeatures) {
       # update values
       f_val <- as.integer(observations[t, f]) + 1
-      alpha <- ifelse(feedback == 1, alpha_pos, alpha_neg)
+      alpha <- ifelse(response == cat_one[t], alpha_pos, alpha_neg)
       values[f_val, f] <- values[f_val, f] + alpha * (feedback - values[f_val, f])
     }
   }
