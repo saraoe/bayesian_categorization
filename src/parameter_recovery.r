@@ -64,7 +64,7 @@ print("RUNNING PARAMETER RECOVERY")
 
 if (model == "gcm") {
   # parameters
-  c_parameters <- c(0.1, seq(from = 1, to = 5, length.out = 6))
+  c_parameters <- c(0.1, seq(from = 1, to = 5, length.out = 5))
   w_parameters <- c("1,0,0,0,0", "0.2,0.2,0.2,0.2,0.2", "0.5,0.5,0,0,0")
 
   for (c in c_parameters) {
