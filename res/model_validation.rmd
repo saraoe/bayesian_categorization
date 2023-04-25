@@ -156,7 +156,7 @@ ggplot(data = response_df) +
     scale_color_brewer(palette = "Dark2")
 
 ggsave("figs/gcm/model_validation/responses_cumulative.png",
-    width = 7, height = 10
+    width = 7, height = 5
 )
 ```
 
@@ -227,7 +227,7 @@ p1 <- ggplot(draws_df) +
     labs(
         x = latex2exp::TeX("$\\alpha_-$"),
         y = latex2exp::TeX("$\\alpha_+$")
-        )
+    )
 
 p2 <- ggplot(draws_df) +
     geom_point(
@@ -239,7 +239,7 @@ p2 <- ggplot(draws_df) +
     labs(
         x = latex2exp::TeX("$\\alpha_-$"),
         y = latex2exp::TeX("$\\tau$")
-        )
+    )
 
 p3 <- ggplot(draws_df) +
     geom_point(
@@ -248,11 +248,13 @@ p3 <- ggplot(draws_df) +
     ) +
     scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     theme_bw() +
-    labs(x = latex2exp::TeX("$\\alpha_+$"),
-    y = latex2exp::TeX("$\\tau$")
+    labs(
+        x = latex2exp::TeX("$\\alpha_+$"),
+        y = latex2exp::TeX("$\\tau$")
     )
 
-p1 / (p2 + p3)
+p1 / (p2 + p3) +
+    plot_layout(guides = "collect")
 
 ggsave("figs/rl/model_validation/chains_correlation.png", width = 7, height = 7)
 ```
@@ -321,8 +323,8 @@ ggplot(data = response_df) +
     ) +
     scale_color_brewer(palette = "PuOr")
 
-ggsave("figs/rl/model_validation/responses_cumulative.png",
-    width = 7, height = 10
+ggsave("figs/rl/model_validation/cumulative_correct.png",
+    width = 7, height = 7
 )
 ```
 
@@ -337,7 +339,8 @@ response_df <- read_csv(
         correct = ifelse(response == true_cat, 1, 0),
         cumulative = cumsum(correct) / trial,
         alpha = as.factor(alpha),
-        temp_round = round(temp, 3)
+        temp_round = round(temp, 3),
+        temp_round = as.factor(temp_round)
     )
 
 draws_df <- read_csv(
@@ -385,11 +388,12 @@ ggplot(draws_df) +
     labs(
         x = latex2exp::TeX("$\\alpha$"),
         y = latex2exp::TeX("$\\tau$")
-        )
+    )
 
 
 ggsave("figs/rl_simple/model_validation/chains_correlation.png",
-       width = 7, height = 7)
+    width = 7, height = 7
+)
 ```
 
 prior posterior update
@@ -404,7 +408,7 @@ ggplot(data = draws_df) +
     theme_bw() +
     labs(x = latex2exp::TeX("$\\alpha$"))
 
-ggsave("figs/rl_simple/model_validation/prior-pos-update-alpha_neg.png",
+ggsave("figs/rl_simple/model_validation/prior-pos-update-alpha.png",
     width = 7, height = 5
 )
 ```
@@ -428,18 +432,18 @@ ggsave("figs/rl_simple/model_validation/prior-pos-update-temp.png",
 ## responses
 ```{r}
 ggplot(data = response_df) +
-    geom_point(aes(x = trial, y = cumulative, color = alpha),
+    geom_point(aes(x = trial, y = cumulative, color = temp_round),
         alpha = .3
     ) +
-    geom_smooth(aes(x = trial, y = cumulative, color = alpha)) +
+    geom_smooth(aes(x = trial, y = cumulative, color = temp_round)) +
     theme_bw() +
-    facet_wrap(. ~ temp_round) +
+    facet_wrap(. ~ alpha) +
     labs(
-        color = latex2exp::TeX("$\\alpha$")
+        color = latex2exp::TeX("$\\tau$")
     ) +
     scale_color_brewer(palette = "PuOr")
 
 ggsave("figs/rl_simple/model_validation/cumulative_correct.png",
-    width = 7, height = 7
+    width = 7, height = 5
 )
 ```
