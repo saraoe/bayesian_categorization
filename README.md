@@ -5,27 +5,31 @@ The ability to form categories is essential for understanding external input and
 ## Project Organization
 
 ````
-├── README.md           <- The top-level README for this project.
+├── README.md                   <- The top-level README for this project.
 ├── logs
-├── data                <- emprical data, samples, and parameter recovery                     
+├── data                        <- all data (empirical, simulated, samples)                    
 ├── src 
-│   ├── stan            <- stan scripts
-│   ├── parallel_pr.sh  <- parameter recovery
-│   ├── fit_models.sh   <- fit models to data
+│   ├── stan                    <- stan scripts
+│   ├── model_validation.sh  
+│   ├── parameter_recovery.sh  
+│   ├── model_recovery.sh  
+│   ├── fit_models.sh   
 │   └── ... 
-├── res                 <- rmd-files for results and plots
-├── figs                <- figures
+├── res                         <- rmd-files for results and plots
+├── figs                        <- figures
 ````
 
 ## Reproduce results
-Firstly, clone the repository
+Clone the repository
 ````
 git clone https://github.com/saraoe/bayesian_categorization.git
-````
-````
 cd bayesian_categorization
 ````
-*NB: You must make a folder in ``bayesian_categorization/`` called ``logs`` before running the bash scripts*
+
+Before running any of the bash scripts:
+- Install r-packages ``cmdstanr`` and run ``cmdstanr::install_cmdstanr(dir = "../")`` in an r-script
+- Install r-packages ``pacman``, ``tidyverse``, ``loo``, and ``DirichletReg``
+- Make directory for logs by running ``mkdir logs`` in a bash terminal
 
 To reproduce all the results run
 ```
@@ -33,18 +37,22 @@ bash run.sh
 ```
 
 To reproduce parts of the analysis:
+- To reproduce model validation run:
+``
+bash src/model_validation.sh
+``
 
-To reproduce parameter recovery run
-```` 
+- To reproduce parameter recovery run:
+``
 bash src/parallel_pr.sh
-````
+``
 
-To reproduce model comparison run
-```` 
+- To reproduce model comparison run:
+``
 bash src/model_comparison.sh
-````
+``
 
-To reproduce sampling using empirical data run
-```` 
-Rscript src/fit_models.r 
-````
+- To reproduce sampling using empirical data run:
+``
+bash src/fit_models.sh
+``
