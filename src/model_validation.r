@@ -34,7 +34,7 @@ true_category <- ifelse(observations$f1 == 1, 1, 0)
 
 # Run models
 if (model == "gcm") {
-    c_parameters <- c(0.1, seq(from = 0.1, to = 5, length.out = 5))
+    c_parameters <- c(0.1, seq(from = 1, to = 5, length.out = 5))
     w_parameters <- c("1,0,0,0,0", "0.2,0.2,0.2,0.2,0.2", "0.5,0.5,0,0,0")
 
     for (c in c_parameters) {
