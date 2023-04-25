@@ -20,6 +20,9 @@ if (length(args) != 1) {
 
 model <- args[1]
 
+## seed
+set.seed("010309")
+
 ## simulate data
 observations <- simulate_observations(
     n_obs = 104,
