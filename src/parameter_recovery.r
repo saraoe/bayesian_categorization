@@ -15,7 +15,7 @@ feature_type <- "binary"
 
 # set seed
 if (index == 1) {
-  seed <- "1711"
+  seed <- "1604"
 } else {
   seed <- sample(c(1:1000000), 1)
 }
