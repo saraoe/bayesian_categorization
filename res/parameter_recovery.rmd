@@ -33,9 +33,21 @@ for (nobs in nobservations) {
   }
 }
 
-recovery_df <- recovery_df %>%
+weights_names <- list(
+  "1,0,0,0,0" = "Optimal",
+  "0.2,0.2,0.2,0.2,0.2" = "Equal",
+  "0.5,0.5,0,0,0" = "Skewed"
+)
+
+recovery_df_all_obs <- recovery_df %>%
   mutate(
     nobservations = as.factor(nobservations)
+  )
+
+recovery_df <- recovery_df %>%
+  filter(nobservations == 104) %>%
+  mutate(
+    w_name = as.character(weights_names[w_parameter])
   )
 ```
 
@@ -52,45 +64,47 @@ recovery_df %>%
 ```
 
 ```{r}
-p <- ggplot(data = recovery_df) +
-  geom_density(aes(x = c_prior), fill = "blue", alpha = .5) +
-  geom_density(aes(x = c), fill = "red", alpha = .5) +
-  geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
+ggplot(data = recovery_df) +
+  geom_violin(
+    aes(x = as.factor(c_parameter), y = c),
+    fill = "red", alpha = 0.3
+  ) +
+  geom_boxplot(
+    aes(x = as.factor(c_parameter), y = c),
+    width = 0.1
+  ) +
+  geom_line(
+    aes(x = as.factor(c_parameter), y = c_parameter, group = 1),
+    linetype = "dashed"
+  ) +
   theme_bw() +
-  facet_wrap(. ~ c_parameter) +
-  xlab("C")
+  xlab("True c") +
+  ylab("c")
 
-p + labs(
-  title = "Prior Posterior update: C parameter",
-  caption = "Prior (blue) and posterior (red)"
-)
-
-ggsave("figs/gcm/parameter_recovery/pos-prior-update-c.png", p,
+ggsave("figs/gcm/parameter_recovery/pos-c.png",
   width = 7, height = 5
 )
 ```
 
 ```{r}
 recovery_df %>%
-  group_by(c_parameter, w_parameter) %>%
+  group_by(c_parameter, w_name) %>%
   summarize(
     mean_c = mean(c),
-    sd_c = sd(c),
-    mean_c_prior = mean(c_prior),
-    sd_c_prior = sd(c_prior)
+    sd_c = sd(c)
   )
 ```
 
 ```{r}
 ggplot(data = recovery_df) +
-  geom_density(aes(x = c, fill = w_parameter), alpha = .5) +
+  geom_density(aes(x = c, fill = w_name), alpha = .5) +
   geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
   theme_bw() +
   facet_wrap(. ~ c_parameter) +
-  scale_fill_manual(values = c("darkorange2", "purple")) +
+  scale_fill_brewer(palette = "Dark2") +
   labs(
     x = "c",
-    fill = "w parameters"
+    fill = "w"
   ) +
   theme(legend.position = "bottom")
 
@@ -100,7 +114,7 @@ ggsave("figs/gcm/parameter_recovery/pos-c_by_w.png",
 ```
 
 ```{r}
-ggplot(data = recovery_df) +
+ggplot(data = recovery_df_all_obs) +
   geom_density(aes(x = c, fill = nobservations), alpha = .5) +
   geom_vline(aes(xintercept = c_parameter), linetype = "dashed") +
   theme_bw() +
@@ -120,14 +134,14 @@ ggsave("figs/gcm/parameter_recovery/pos-c_by_nobs.png",
 ```{r}
 rm(weights_draws_df) # rm in case it is already defined
 
-c_parameters <- unique(recovery_df$c_parameter)
-w_parameters <- unique(recovery_df$w_parameter)
-nobservations <- unique(recovery_df$nobservations)
+c_parameters <- unique(recovery_df_all_obs$c_parameter)
+w_parameters <- unique(recovery_df_all_obs$w_parameter)
+nobservations <- unique(recovery_df_all_obs$nobservations)
 
 for (c_param in c_parameters) {
   for (w_params in w_parameters) {
     for (nobs in nobservations) {
-      weights <- recovery_df %>%
+      weights <- recovery_df_all_obs %>%
         filter(
           c_parameter == c_param &
             w_parameter == w_params &
@@ -148,7 +162,7 @@ for (c_param in c_parameters) {
           nobservations = nobs
         )
 
-      weights_prior <- recovery_df %>%
+      weights_prior <- recovery_df_all_obs %>%
         filter(
           c_parameter == c_param &
             w_parameter == w_params &
@@ -172,11 +186,19 @@ for (c_param in c_parameters) {
 }
 
 rm(weights, weights_prior, tmp)
+
+weights_draws_df <- weights_draws_df %>%
+  mutate(
+    w_name = as.character(weights_names[w_param_cond])
+  )
+weights_draws_df_all_obs <- weights_draws_df
+weights_draws_df <- weights_draws_df %>%
+  filter(nobservations == 104)
 ```
 
 ```{r}
 weights_draws_df %>%
-  group_by(w_param_cond, feature_number) %>%
+  group_by(w_name, feature_number) %>%
   summarize(
     w_mean = mean(weights),
     sd_w = sd(weights),
@@ -187,52 +209,26 @@ weights_draws_df %>%
 ```
 
 ```{r}
-weights_draws_df %>%
-  filter(w_param_cond == "1,0,0,0,0") %>%
-  ggplot() +
-  geom_density(
-    aes(x = weights_prior),
-    alpha = .5, fill = "blue"
+ggplot(data = weights_draws_df) +
+  geom_violin(
+    aes(x = as.factor(feature_number), y = weights),
+    fill = "red", alpha = 0.3
   ) +
-  geom_density(
-    aes(x = weights),
-    alpha = .5, fill = "red"
+  geom_boxplot(
+    aes(x = as.factor(feature_number), y = weights),
+    width = 0.1
   ) +
-  geom_vline(
-    aes(xintercept = w_parameter),
+  geom_line(
+    aes(x = as.factor(feature_number), y = w_parameter, group = 1),
     linetype = "dashed"
   ) +
+  facet_wrap(. ~ w_name, ncol = 1) +
   theme_bw() +
-  labs(x = "weight") +
-  facet_wrap(. ~ feature_number)
+  xlab("True weights") +
+  ylab("w")
 
-ggsave("figs/gcm/parameter_recovery/pos-prior-update_w_1.png",
-  width = 7, height = 5
-)
-```
-
-```{r}
-weights_draws_df %>%
-  filter(w_param_cond == "0.2,0.2,0.2,0.2,0.2") %>%
-  ggplot() +
-  geom_density(
-    aes(x = weights_prior),
-    alpha = .5, fill = "blue"
-  ) +
-  geom_density(
-    aes(x = weights),
-    alpha = .5, fill = "red"
-  ) +
-  geom_vline(
-    aes(xintercept = w_parameter),
-    linetype = "dashed"
-  ) +
-  theme_bw() +
-  labs(x = "weight") +
-  facet_wrap(. ~ feature_number)
-
-ggsave("figs/gcm/parameter_recovery/pos-prior-update_w_2.png",
-  width = 7, height = 5
+ggsave("figs/gcm/parameter_recovery/pos-w.png",
+  width = 7, height = 10
 )
 ```
 
@@ -240,126 +236,87 @@ ggsave("figs/gcm/parameter_recovery/pos-prior-update_w_2.png",
 ggplot(data = weights_draws_df) +
   geom_density(
     aes(
-      x = weights, fill = w_param_cond
+      x = weights, fill = w_name
     ),
-    alpha = .3
+    alpha = .5
   ) +
   geom_vline(
-    aes(xintercept = w_parameter, color = w_param_cond),
+    aes(xintercept = w_parameter, color = w_name),
     linetype = "dashed"
   ) +
   theme_bw() +
   facet_wrap(. ~ feature_number) +
-  scale_fill_manual(values = c("darkorange2", "purple")) +
-  scale_color_manual(values = c("darkorange2", "purple")) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
   labs(
-    color = "w parameters",
-    fill = "w parameters",
+    color = "w",
+    fill = "w",
     x = "weight"
   ) +
   theme(legend.position = "bottom")
 
-ggsave("figs/gcm/parameter_recovery/pos_w_parameters.png",
+ggsave("figs/gcm/parameter_recovery/pos_w_dens.png",
   width = 7, height = 5
 )
 ```
 
 ```{r}
-weights_draws_df %>%
-  filter(w_param_cond == "1,0,0,0,0") %>%
-  ggplot() +
-  geom_density(
-    aes(
-      x = weights, fill = as.character(c_parameter)
-    ),
-    alpha = .4
-  ) +
-  geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
-  theme_bw() +
-  facet_wrap(. ~ feature_number) +
-  scale_fill_brewer(palette = "PuOr") +
-  labs(
-    color = "c parameters",
-    fill = "c parameters"
-  ) +
-  theme(legend.position = "bottom")
+for (w_cond in unique(weights_draws_df$w_name)) {
+  weights_draws_df %>%
+    filter(w_name == w_cond) %>%
+    ggplot() +
+    geom_density(
+      aes(
+        x = weights, fill = as.character(c_parameter)
+      ),
+      alpha = .4
+    ) +
+    geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
+    theme_bw() +
+    facet_wrap(. ~ feature_number) +
+    scale_fill_brewer(palette = "PuOr") +
+    labs(
+      color = "c",
+      fill = "c"
+    ) 
 
-ggsave("figs/gcm/parameter_recovery/pos-w_1_by_c.png",
-  width = 7, height = 5
-)
+  ggsave(
+    paste("figs/gcm/parameter_recovery/pos-w_",
+      w_cond, "_by_c.png",
+      sep = ""
+    ),
+    width = 7, height = 3
+  )
+}
 ```
 
 ```{r}
-weights_draws_df %>%
-  filter(w_param_cond == "0.2,0.2,0.2,0.2,0.2") %>%
-  ggplot() +
-  geom_density(
-    aes(
-      x = weights, fill = as.character(c_parameter)
+for (w_cond in unique(weights_draws_df$w_name)) {
+  weights_draws_df_all_obs %>%
+    filter(w_name == w_cond) %>%
+    ggplot() +
+    geom_density(
+      aes(
+        x = weights, fill = as.character(nobservations)
+      ),
+      alpha = .4
+    ) +
+    geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
+    theme_bw() +
+    facet_wrap(. ~ feature_number) +
+    scale_fill_brewer(palette = "Dark2") +
+    labs(
+      fill = "Number of \nobservations"
+    )
+
+  ggsave(
+    paste("figs/gcm/parameter_recovery/pos-w_",
+      w_cond, "_by_nobs.png",
+      sep = ""
     ),
-    alpha = .4
-  ) +
-  geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
-  theme_bw() +
-  facet_wrap(. ~ feature_number) +
-  scale_fill_brewer(palette = "PuOr") +
-  labs(
-    color = "c parameters",
-    fill = "c parameters"
-  ) +
-  theme(legend.position = "bottom")
-
-ggsave("figs/gcm/parameter_recovery/pos-w_2_by_c.png",
-  width = 7, height = 5
-)
-```
-
-```{r}
-weights_draws_df %>%
-  filter(w_param_cond == "1,0,0,0,0") %>%
-  ggplot() +
-  geom_density(
-    aes(
-      x = weights, fill = as.character(nobservations)
-    ),
-    alpha = .4
-  ) +
-  geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
-  theme_bw() +
-  facet_wrap(. ~ feature_number) +
-  scale_fill_brewer(palette = "Dark2") +
-  labs(
-    fill = "Number of observations"
-  ) +
-  theme(legend.position = "bottom")
-
-ggsave("figs/gcm/parameter_recovery/pos-w_1_by_nobs.png",
-  width = 7, height = 5
-)
-```
-
-```{r}
-weights_draws_df %>%
-  filter(w_param_cond == "0.2,0.2,0.2,0.2,0.2") %>%
-  ggplot() +
-  geom_density(
-    aes(
-      x = weights, fill = as.character(nobservations)
-    ),
-    alpha = .4
-  ) +
-  geom_vline(aes(xintercept = w_parameter), linetype = "dashed") +
-  theme_bw() +
-  facet_wrap(. ~ feature_number) +
-  scale_fill_brewer(palette = "Dark2") +
-  labs(
-    fill = "Number of observations"
-  ) +
-  theme(legend.position = "bottom")
-
-ggsave("figs/gcm/parameter_recovery/pos-w_2_by_nobs.png",
-  width = 7, height = 5
-)
+    width = 7, height = 3
+  )
+}
 ```
 
 ## Reinforcement Learning
@@ -390,6 +347,10 @@ recovery_df <- recovery_df %>%
     true_alpha_neg_round = round(true_alpha_neg, 3),
     true_temp_round = round(true_temp, 3)
   )
+
+recovery_df_all_obs <- recovery_df
+recovery_df <- recovery_df %>%
+  filter(nobservations == 104)
 ```
 
 ### inspection
@@ -486,63 +447,20 @@ pos <- ggplot(data = recovery_df) +
   xlab(latex2exp::TeX("True $\\alpha_+$")) +
   ylab(latex2exp::TeX("$\\alpha_+$"))
 
-p <- neg + pos
+p <- neg / pos
 
 p +
   plot_annotation(title = "Posterior Distributions of Alphas")
-ggsave("figs/rl/parameter_recovery/pos-alphas.png", p,
+ggsave("figs/rl/parameter_recovery/pos-alpha_neg.png", neg,
+  width = 7, height = 5
+)
+ggsave("figs/rl/parameter_recovery/pos-alpha_pos.png", pos,
   width = 7, height = 5
 )
 ```
 
 ```{r}
-neg <- ggplot(data = recovery_df) +
-  geom_violin(
-    aes(x = as.factor(true_alpha_neg_round), y = alpha_neg),
-    fill = "red", alpha = 0.3
-  ) +
-  geom_boxplot(
-    aes(x = as.factor(true_alpha_neg_round), y = alpha_neg),
-    width = 0.1
-  ) +
-  geom_line(
-    aes(x = as.factor(true_alpha_neg_round), y = true_alpha_neg, group = 1),
-    linetype = "dashed"
-  ) +
-  theme_bw() +
-  facet_wrap(. ~ true_temp_round) +
-  xlab("True Alpha") +
-  ylab("Alpha Negative")
-
-pos <- ggplot(data = recovery_df) +
-  geom_violin(
-    aes(x = as.factor(true_alpha_pos_round), y = alpha_pos),
-    fill = "red", alpha = 0.3
-  ) +
-  geom_boxplot(
-    aes(x = as.factor(true_alpha_pos_round), y = alpha_pos),
-    width = 0.1
-  ) +
-  geom_line(
-    aes(x = as.factor(true_alpha_pos_round), y = true_alpha_pos, group = 1),
-    linetype = "dashed"
-  ) +
-  theme_bw() +
-  facet_wrap(. ~ true_temp_round) +
-  xlab("True Alpha") +
-  ylab("Alpha Postive")
-
-p <- neg + pos
-
-p +
-  plot_annotation(title = "Posterior Distributions of Alphas by Temperature")
-ggsave("figs/rl/parameter_recovery/pos-alphas_by_temp.png", p,
-  width = 7, height = 5
-)
-```
-
-```{r}
-p1 <- ggplot(data = recovery_df) +
+p1 <- ggplot(data = recovery_df_all_obs) +
   geom_density(
     aes(
       x = alpha_neg,
@@ -565,7 +483,7 @@ ggsave("figs/rl/parameter_recovery/pos-alpha-neg_by_nobs.png", p1,
 ```
 
 ```{r}
-p2 <- ggplot(data = recovery_df) +
+p2 <- ggplot(data = recovery_df_all_obs) +
   geom_density(
     aes(
       x = alpha_pos,
@@ -585,12 +503,6 @@ p2 + labs(title = "Posterior update: Alpha_positive")
 ggsave("figs/rl/parameter_recovery/pos-alpha-pos_by_nobs.png", p2,
   width = 7, height = 5
 )
-```
-
-```{r}
-p1 / p2 +
-  plot_layout(guides = "collect") &
-  theme(legend.position = "bottom")
 ```
 
 ```{r}
@@ -644,12 +556,6 @@ ggsave("figs/rl/parameter_recovery/pos-alpha-pos_by_temp.png", p2,
 ```
 
 ```{r}
-p1 / p2 +
-  plot_layout(guides = "collect") &
-  theme(legend.position = "bottom")
-```
-
-```{r}
 recovery_df %>%
   group_by(true_temp) %>%
   summarize(
@@ -680,29 +586,6 @@ ggsave("figs/rl/parameter_recovery/pos-prior-update-temp.png", p,
 
 ```{r}
 p <- ggplot(data = recovery_df) +
-  geom_density(
-    aes(
-      x = temp,
-      fill = as.character(nobservations)
-    ),
-    alpha = .5
-  ) +
-  geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
-  theme_bw() +
-  facet_wrap(. ~ true_temp_round) +
-  labs(fill = "Number of observations") +
-  xlab(latex2exp::TeX("$\\tau$")) +
-  scale_fill_brewer(palette = "Dark2") +
-  theme(legend.position = "bottom")
-
-p + labs(title = "Posterior update: Temperature")
-ggsave("figs/rl/parameter_recovery/pos-temp_by_nobs.png", p,
-  width = 7, height = 5
-)
-```
-
-```{r}
-p <- ggplot(data = recovery_df) +
   geom_violin(
     aes(x = as.factor(true_temp_round), y = temp),
     fill = "red", alpha = 0.3
@@ -721,6 +604,29 @@ p <- ggplot(data = recovery_df) +
 
 p + labs(title = "Posterior Distributions of Temperature")
 ggsave("figs/rl/parameter_recovery/pos-temp.png", p,
+  width = 7, height = 5
+)
+```
+
+```{r}
+p <- ggplot(data = recovery_df_all_obs) +
+  geom_density(
+    aes(
+      x = temp,
+      fill = as.character(nobservations)
+    ),
+    alpha = .5
+  ) +
+  geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
+  theme_bw() +
+  facet_wrap(. ~ true_temp_round) +
+  labs(fill = "Number of observations") +
+  xlab(latex2exp::TeX("$\\tau$")) +
+  scale_fill_brewer(palette = "Dark2") +
+  theme(legend.position = "bottom")
+
+p + labs(title = "Posterior update: Temperature")
+ggsave("figs/rl/parameter_recovery/pos-temp_by_nobs.png", p,
   width = 7, height = 5
 )
 ```
@@ -798,6 +704,10 @@ recovery_df <- recovery_df %>%
     true_alpha_round = round(true_alpha, 3),
     true_temp_round = round(true_temp, 3)
   )
+
+recovery_df_all_obs <- recovery_df
+recover_df <- recovery_df %>%
+  filter(nobservations == 104)
 ```
 
 ### inspection
@@ -855,7 +765,7 @@ ggsave("figs/rl_simple/parameter_recovery/pos-alpha.png", p,
 ```
 
 ```{r}
-p <- ggplot(data = recovery_df) +
+p <- ggplot(data = recovery_df_all_obs) +
   geom_density(
     aes(
       x = alpha,
@@ -932,7 +842,7 @@ ggsave("figs/rl_simple/parameter_recovery/pos-prior-update-temp.png", p,
 ```
 
 ```{r}
-p <- ggplot(data = recovery_df) +
+p <- ggplot(data = recovery_df_all_obs) +
   geom_density(
     aes(
       x = temp,
