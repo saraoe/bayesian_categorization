@@ -60,28 +60,11 @@ pointwise_df <- pointwise_df %>%
             is.infinite(influence_pareto_k), NA, influence_pareto_k
         )
     )
-
-# add model names instead of numbers
-model_number <- list(
-    "1" = "gcm",
-    "2" = "rl",
-    "3" = "rl_simple"
-)
-
-colnames(compare_df) <- c(
-    "model", colnames(compare_df)[2:ncol(compare_df)]
-)
-compare_df <- compare_df %>%
-    mutate(
-        model = str_extract(model, "\\d"),
-        model = as.character(model_number[model]),
-        model_name = as.character(model_names[model])
-    )
 ```
 
 ## PSIS diagnostic
 ```{r}
-pointwise_df <- pointwise_df %>% 
+pointwise_df <- pointwise_df %>%
     mutate(
         critical_psis = ifelse(
             influence_pareto_k > .7 | is.na(influence_pareto_k),
@@ -92,7 +75,7 @@ pointwise_df <- pointwise_df %>%
 pointwise_df %>%
     group_by(model) %>%
     summarize(
-        sum(critical_psis) / n()
+        mean(critical_psis)
     )
 ```
 
@@ -122,7 +105,7 @@ ggplot(data = pointwise_df) +
     scale_color_brewer(palette = "Dark2")
 
 ggsave("figs/model_comparison/psis_diagnostics.png",
-    width = 7, height = 7
+    width = 7, height = 5
 )
 ```
 
@@ -153,7 +136,7 @@ ggplot(data = pointwise_df) +
     scale_color_brewer(palette = "Dark2")
 
 ggsave("figs/model_comparison/psis_diagnostics_subject.png",
-    width = 7
+    width = 7, height = 10
 )
 ```
 
@@ -177,35 +160,46 @@ compare_df %>%
 ```
 
 ```{r}
-p1 <- compare_df %>%
-    filter(condition == 1) %>%
-    ggplot() +
-    geom_density(aes(x = looic, fill = model_name),
-                 alpha = .5) +
-    facet_wrap(. ~ session) +
+cm <- compare_df %>%
+    group_by(session, model, condition) %>%
+    summarize(
+        freq = sum(model_rank == 1),
+        weight = mean(model_weights)
+    )
+
+ggplot(cm, aes(model, session, fill = freq)) +
+    geom_tile() +
+    geom_text(aes(label = freq)) +
     theme_bw() +
-    scale_fill_brewer(palette = "Dark2") +
+    facet_wrap(. ~ condition) +
+    scale_fill_gradient(low = "white", high = "steelblue") +
     labs(
-        fill = "Model",
-        title = "A) Condition 1")
+        x = "model",
+        y = "session"
+    ) +
+    theme(legend.position = "none")
 
-p2 <- compare_df %>%
-    filter(condition == 2) %>%
-    ggplot() +
-    geom_density(aes(x = looic, fill = model_name),
-                 alpha = .5) +
-    facet_wrap(. ~ session) +
+ggsave("figs/model_comparison/model_rank_matrix.png",
+    width = 7, height = 4
+)
+```
+
+```{r}
+ggplot(cm, aes(model, session, fill = weight)) +
+    geom_tile() +
+    geom_text(aes(label = round(weight, 3))) +
     theme_bw() +
-    scale_fill_brewer(palette = "Dark2") +
+    facet_wrap(. ~ condition) +
+    scale_fill_gradient(low = "white", high = "steelblue") +
     labs(
-        fill = "Model",
-        title = "B) Condition 2")
+        x = "model",
+        y = "session"
+    ) +
+    theme(legend.position = "none")
 
-p1 / p2 +
-  plot_layout(guides = "collect")
-
-ggsave("figs/model_comparison/looic_distributions.png",
-       width = 7, height = 7)
+ggsave("figs/model_comparison/model_weight_matrix.png",
+    width = 7, height = 4
+)
 ```
 
 ## elpd diff
