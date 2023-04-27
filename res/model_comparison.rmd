@@ -148,7 +148,9 @@ compare_df <- compare_df %>%
         model_rank = ifelse(
             looic == min(looic), 1,
             ifelse(looic == max(looic), 3, 2)
-        )
+        ),
+        condition = ifelse(condition == 1,
+                           "dyad", "individual")
     )
 
 compare_df %>%
