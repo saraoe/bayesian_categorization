@@ -76,7 +76,8 @@ ggplot(data = pointwise_df) +
         y = "Pareto k",
         color = "Model"
     ) +
-    scale_color_brewer(palette = "Dark2")
+    scale_color_brewer(palette = "Dark2") +
+    theme(legend.position = "bottom")
 
 ggsave("figs/model_recovery/psis_diagnostics.png",
     width = 7, height = 5
