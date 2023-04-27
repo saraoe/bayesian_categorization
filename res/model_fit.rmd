@@ -4,12 +4,13 @@
 library(pacman)
 pacman::p_load(
     tidyverse,
-    patchwork
+    patchwork,
+    latex2exp
 )
 ```
 
 ```{r}
-# emperical data
+# empirical data
 aliendata <- read_csv("data/AlienData.csv") %>%
     mutate(
         subject = ifelse(condition == 2, subject + 100, subject)
@@ -17,58 +18,556 @@ aliendata <- read_csv("data/AlienData.csv") %>%
 ```
 
 ## GCM
+### load data
+```{r}
+draws_df <- read_csv("data/gcm_samples.csv") %>%
+    mutate(
+        chain = as.factor(.chain)
+    )
+```
+
+### chains
+```{r}
+sub1_df <- draws_df %>%
+    filter(subject == 1)
+
+p1 <- ggplot(sub1_df) +
+    geom_line(aes(.iteration, c, color = chain)) +
+    theme_bw() +
+    facet_wrap(. ~ session, ncol = 1) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = "c")
+
+ggsave("figs/gcm/chains_iteration_c_sub_1.png", p1,
+    width = 7, height = 7
+)
+
+p2 <- ggplot(sub1_df) +
+    geom_line(aes(.iteration, w_1, color = chain)) +
+    theme_bw() +
+    facet_wrap(. ~ session, ncol = 1) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$w_1$"))
+
+ggsave("figs/gcm/chains_iteration_w1_sub_1.png", p2,
+    width = 7, height = 7
+)
+
+p3 <- ggplot(sub1_df) +
+    geom_line(aes(.iteration, w_2, color = chain)) +
+    theme_bw() +
+    facet_wrap(. ~ session, ncol = 1) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$w_2$"))
+
+ggsave("figs/gcm/chains_iteration_w2_sub_1.png", p3,
+    width = 7, height = 7
+)
+
+p4 <- ggplot(sub1_df) +
+    geom_line(aes(.iteration, w_3, color = chain)) +
+    theme_bw() +
+    facet_wrap(. ~ session, ncol = 1) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$w_3$"))
+
+ggsave("figs/gcm/chains_iteration_w3_sub_1.png", p4,
+    width = 7, height = 7
+)
+
+p5 <- ggplot(sub1_df) +
+    geom_line(aes(.iteration, w_4, color = chain)) +
+    theme_bw() +
+    facet_wrap(. ~ session, ncol = 1) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$w_4$"))
+
+ggsave("figs/gcm/chains_iteration_w4_sub_1.png", p5,
+    width = 7, height = 7
+)
+
+p6 <- ggplot(sub1_df) +
+    geom_line(aes(.iteration, w_5, color = chain)) +
+    theme_bw() +
+    facet_wrap(. ~ session, ncol = 1) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+    labs(y = latex2exp::TeX("$w_5$"))
+
+ggsave("figs/gcm/chains_iteration_w5_sub_1.png", p6,
+    width = 7, height = 7
+)
+
+(p1 + p2) / (p3 + p4) / (p5 + p6) +
+    plot_layout(guides = "collect")
+
+ggsave("figs/gcm/chains_iteration_sub_1.png",
+    width = 7, height = 7
+)
+```
+
+### c parameter
+```{r}
+draws_df %>%
+    filter(subject == 1) %>%
+    ggplot() +
+    geom_density(aes(x = c_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = c), fill = "red", alpha = .5) +
+    theme_bw() +
+    facet_wrap(. ~ session, ncol = 1) +
+    xlab("c")
+
+ggsave("figs/gcm/prior-pos-update-c_subject_1.png",
+    width = 7, height = 5
+)
+```
+
+```{r}
+c_results <- draws_df %>%
+    group_by(condition, session, subject) %>%
+    summarize(
+        mean = mean(c),
+        median = median(c),
+        sd = sd(c)
+    ) %>%
+    mutate(
+        session = as.factor(session),
+        condition = ifelse(
+            condition == 1,
+            "dyad", "individual"
+        )
+    )
+
+draws_df %>%
+    group_by(condition, session) %>%
+    summarize(
+        mean = mean(c),
+        median = median(c),
+        sd = sd(c)
+    )
+```
+
+```{r}
+ggplot(c_results, aes(
+        x = session, y = median,
+        color = condition, fill = condition
+        )
+        ) +
+    ggdist::stat_halfeye(
+        # move to the right
+        justification = -0.2,
+        # remove the slub interval
+        .width = 0,
+        point_colour = NA,
+        # alpha
+        alpha = .5
+    ) +
+    geom_point(alpha = .5) +
+    theme_bw() +
+    scale_color_manual(values = c("darkorange", "slateblue")) +
+    scale_fill_manual(values = c("darkorange", "slateblue")) +
+    labs(y = "c") +
+    coord_flip()
+
+ggsave("figs/gcm/result_c.png",
+       width = 7, height = 5)
+```
+
+### w parameters
+```{r}
+rm(weights_draws_df) # rm in case it is already defined
+
+for (con in unique(draws_df$condition)) {
+  for (ses in unique(draws_df$session)) {
+    for (sub in unique(draws_df$subject)) {
+      weights <- draws_df %>%
+        filter(
+          condition == con &
+            session == ses &
+            subject == sub
+        ) %>%
+        pivot_longer(
+          c("w_1", "w_2", "w_3", "w_4", "w_5"),
+          names_to = "features", values_to = "weights"
+        ) %>%
+        mutate(feature_number = str_extract(features, "\\d+")) %>%
+        select(c(feature_number, weights)) %>%
+        mutate(
+          condition = con,
+          session = ses,
+          subject = sub
+        )
+
+      weights_prior <- draws_df %>%
+        filter(
+          condition == con &
+            session == ses &
+            subject == sub
+        ) %>%
+        pivot_longer(
+          c("w_prior_1", "w_prior_2", "w_prior_3", "w_prior_4", "w_prior_5"),
+          names_to = "features", values_to = "weights_prior"
+        ) %>%
+        select(c(weights_prior))
+
+      tmp <- cbind(weights, weights_prior)
+
+      if (exists("weights_draws_df")) {
+        weights_draws_df <- rbind(weights_draws_df, tmp)
+      } else {
+        weights_draws_df <- tmp
+      }
+    }
+  }
+}
+
+rm(weights, weights_prior, tmp)
+```
+
+```{r}
+# add optimal weights
+
+optimal_weights <- list(
+    "1" = c(0, 1 / 3, 1 / 4),
+    "2" = c(0, 1 / 3, 1 / 4),
+    "3" = c(0, 1 / 3, 1 / 4),
+    "4" = c(1, 0, 0),
+    "5" = c(0, 0, 1 / 4)
+)
+
+weights_draws_df <- weights_draws_df %>%
+    group_by(session, feature_number) %>%
+    mutate(
+        s = as.numeric(session),
+        optimal_weight = as.numeric(
+            optimal_weights[feature_number][[1]][session]
+        ),
+        weight_diff = weights - optimal_weight
+    )
+
+```
+
+```{r}
+w_results <- weights_draws_df %>%
+    group_by(condition, session, subject, feature_number) %>%
+    summarize(
+        mean = mean(weights),
+        median = median(weights),
+        sd = sd(weights),
+        mean_diff = mean(weight_diff),
+        median_diff = median(weight_diff),
+        sd_diff = sd(weight_diff),
+        optimal = unique(optimal_weight)
+    ) %>%
+    mutate(
+        feature_number = as.factor(feature_number),
+        condition = as.factor(condition),
+        session = as.factor(session),
+        condition = ifelse(
+            condition == 1,
+            "dyad", "individual"
+        )
+    )
+
+weights_draws_df %>%
+    group_by(condition, session, feature_number) %>%
+    summarize(
+        mean = mean(weights),
+        median = median(weights),
+        sd = sd(weights)
+    )
+```
+
+```{r}
+p1 <- weights_draws_df %>%
+    filter(subject == 1 & session == 1) %>%
+    ggplot() +
+    geom_density(aes(x = weights_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = weights), fill = "red", alpha = .5) +
+    theme_bw() +
+    facet_wrap(. ~ feature_number) +
+    xlab("weights")
+
+p2 <- weights_draws_df %>%
+    filter(subject == 1 & session == 2) %>%
+    ggplot() +
+    geom_density(aes(x = weights_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = weights), fill = "red", alpha = .5) +
+    theme_bw() +
+    facet_wrap(. ~ feature_number) +
+    xlab("weights")
+
+p3 <- weights_draws_df %>%
+    filter(subject == 1 & session == 3) %>%
+    ggplot() +
+    geom_density(aes(x = weights_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = weights), fill = "red", alpha = .5) +
+    theme_bw() +
+    facet_wrap(. ~ feature_number) +
+    xlab("weights")
+
+p1 / p2 / p3
+
+ggsave("figs/gcm/prior-pos-update-w_subject_1.png",
+    width = 7, height = 5
+)
+```
+
+```{r}
+ggplot(w_results
+        ) +
+    ggdist::stat_halfeye(aes(
+        x = feature_number, y = median,
+        fill = condition
+        ),
+        # move to the right
+        justification = -0.2,
+        # remove the slub interval
+        .width = 0,
+        point_colour = NA,
+        # alpha
+        alpha = .5
+    ) +
+    geom_point(aes(
+        x = feature_number, y = median,
+        color = condition
+        ),
+        alpha = .2) +
+    geom_point(aes(
+        x = feature_number, y = optimal),
+        shape = 4, size = 3) +
+    theme_bw() +
+    facet_wrap(. ~ session, ncol = 1) +
+    scale_color_manual(values = c("darkorange", "slateblue")) +
+    scale_fill_manual(values = c("darkorange", "slateblue")) +
+    labs(y = "w", x = "feature dimension") +
+    coord_flip()
+
+ggsave("figs/gcm/result_w.png",
+       width = 7, height = 10)
+```
+
+```{r}
+ggplot(w_results, aes(
+        x = feature_number, y = median_diff,
+        color = condition, fill = condition
+        )
+        ) +
+    ggdist::stat_halfeye(
+        # move to the right
+        justification = -0.2,
+        # remove the slub interval
+        .width = 0,
+        point_colour = NA,
+        # alpha
+        alpha = .5
+    ) +
+    geom_point(alpha = .5) +
+    geom_hline(aes(yintercept = 0),
+               linetype = "dashed") +
+    theme_bw() +
+    facet_wrap(. ~ session, ncol = 1) +
+    scale_color_manual(values = c("darkorange", "slateblue")) +
+    scale_fill_manual(values = c("darkorange", "slateblue")) +
+    labs(y = "difference", x = "feature dimension") +
+    coord_flip()
+
+ggsave("figs/gcm/result_w_diff.png",
+       width = 7, height = 10)
+```
+
+### posterior predictions
+```{r}
+rm(posteriorcorrect)
+
+for (t in seq_len(104)) {
+    col <- paste("posteriorcorrect_", t, sep = "")
+    tmp <- draws_df %>%
+        select(
+            "subject", "session",
+            "condition", col
+        ) %>%
+        group_by(subject, condition, session) %>%
+        summarize_all(c(mean, sd)) %>%
+        mutate(
+            correct = fn1,
+            sd_correct = fn2,
+            trial = t
+        ) %>%
+        select(!c(fn1, fn2))
+
+    if (exists("posteriorcorrect")) {
+        posteriorcorrect <- rbind(
+            posteriorcorrect, tmp
+        )
+    } else {
+        posteriorcorrect <- tmp
+    }
+}
+```
+
+```{r}
+posteriorcorrect <- posteriorcorrect %>%
+    mutate(
+        condition = as.factor(condition),
+        session = as.factor(session),
+        subject = as.factor(subject),
+        type = "estimated"
+    ) %>%
+    group_by(subject, session) %>%
+    mutate(
+        cumulative = cumsum(correct) / trial
+    )
+
+real_correct <- aliendata %>%
+    select(c(condition, subject, session, correct, trial)) %>%
+    mutate(
+        condition = as.factor(condition),
+        subject = as.factor(subject),
+        session = as.factor(session),
+        sd = 0,
+        type = "real",
+        cumulative = cumsum(correct) / trial
+    ) %>%
+    group_by(subject, session) %>%
+    mutate(
+        cumulative = cumsum(correct) / trial
+    )
+
+posteriorcorrect <- rbind(posteriorcorrect, real_correct)
+```
+
+```{r}
+posteriorcorrect %>%
+    filter(subject == 1) %>%
+    ggplot() +
+    geom_point(aes(x = trial, y = correct, color = type),
+        alpha = .1
+    ) +
+    geom_smooth(aes(x = trial, y = correct, color = type)) +
+    theme_bw() +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+ggsave("figs/gcm/pos_preds_correct_subject_1.png",
+    width = 7, height = 5
+)
+```
+
+```{r}
+posteriorcorrect %>%
+    filter(subject == 1) %>%
+    ggplot() +
+    geom_point(aes(x = trial, y = cumulative, color = type),
+        alpha = .1
+    ) +
+    geom_line(aes(x = trial, y = cumulative, color = type)) +
+    theme_bw() +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+ggsave("figs/gcm/pos_preds_cumulative_subject_1.png",
+    width = 7, height = 5
+)
+```
+
+```{r}
+p1 <- posteriorcorrect %>%
+    filter(condition == 1) %>%
+    ggplot() +
+    geom_point(aes(x = trial, y = correct, color = type),
+        alpha = .1
+    ) +
+    geom_smooth(aes(x = trial, y = correct, color = type)) +
+    theme_bw() +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+ggsave("figs/gcm/pos_preds_correct_condition1.png", p1,
+    width = 7, height = 5
+)
+
+p2 <- posteriorcorrect %>%
+    filter(condition == 2) %>%
+    ggplot() +
+    geom_point(aes(x = trial, y = correct, color = type),
+        alpha = .1
+    ) +
+    geom_smooth(aes(x = trial, y = correct, color = type)) +
+    theme_bw() +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+
+ggsave("figs/gcm/pos_preds_correct_condition2.png", p2,
+    width = 7, height = 5
+)
+
+p1 / p2 +
+    plot_layout(guides = "collect")
+```
+
+```{r}
+p1 <- posteriorcorrect %>%
+    filter(condition == 1) %>%
+    ggplot() +
+    geom_point(aes(x = trial, y = cumulative, color = type),
+        alpha = .05
+    ) +
+    geom_smooth(aes(x = trial, y = cumulative, color = type)) +
+    theme_bw() +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+ggsave("figs/gcm/pos_preds_cumulative_condition1.png", p1,
+    width = 7, height = 5
+)
+
+p2 <- posteriorcorrect %>%
+    filter(condition == 2) %>%
+    ggplot() +
+    geom_point(aes(x = trial, y = cumulative, color = type),
+        alpha = .05
+    ) +
+    geom_smooth(aes(x = trial, y = cumulative, color = type)) +
+    theme_bw() +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+ggsave("figs/gcm/pos_preds_cumulative_condition2.png", p2,
+    width = 7, height = 5
+)
+
+p1 / p2 +
+    plot_layout(guides = "collect")
+```
 
 ## Reinforcement Learning (assymetrical)
 ### load data
 ```{r}
-draws_df <- read_csv("data/rl_samples.csv")
-
-# update colnames
-new_colnames <- c()
-for (colname in colnames(draws_df)) {
-    if (grepl("values_prior", colname, fixed = TRUE)) { # specific case
-        new_colname <- paste("values_prior_",
-            str_extract_all(colname, "\\d+")[[1]][1], "_",
-            str_extract_all(colname, "\\d+")[[1]][2],
-            sep = ""
-        )
-        new_colnames <- c(new_colnames, new_colname)
-    } else if (grepl(",", colname, fixed = TRUE)) { # matrix
-        new_colname <- paste(str_extract(colname, "\\w+"), "_",
-            str_extract_all(colname, "\\d+")[[1]][1], "_",
-            str_extract_all(colname, "\\d+")[[1]][2],
-            sep = ""
-        )
-        new_colnames <- c(new_colnames, new_colname)
-    } else if (grepl("[", colname, fixed = TRUE)) { # array
-        new_colname <- paste(str_extract(colname, "\\w+"), "_",
-            str_extract(colname, "\\d+"),
-            sep = ""
-        )
-        new_colnames <- c(new_colnames, new_colname)
-    } else {
-        new_colnames <- c(new_colnames, colname)
-    }
-}
-colnames(draws_df) <- new_colnames
+draws_df <- read_csv("data/rl_samples.csv") %>%
+    mutate(
+        chain = as.factor(.chain)
+    )
 ```
 
-### inspection
-Chains
+### Chains
 ```{r}
 p1 <- ggplot(draws_df) +
-    geom_line(aes(.iteration, temp, group = .chain, color = .chain)) +
+    geom_line(aes(.iteration, temp, color = chain)) +
     theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     labs(y = "Temperature")
 
 p2 <- ggplot(draws_df) +
-    geom_line(aes(.iteration, alpha_neg, group = .chain, color = .chain)) +
+    geom_line(aes(.iteration, alpha_neg, color = chain)) +
     theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     labs(y = "Alpha Negative")
 
 p3 <- ggplot(draws_df) +
-    geom_line(aes(.iteration, alpha_pos, group = .chain, color = .chain)) +
+    geom_line(aes(.iteration, alpha_pos, color = chain)) +
     theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     labs(y = "Alpha Positive")
 
 p <- p1 / p2 / p3
@@ -79,26 +578,32 @@ ggsave("figs/rl/chain_iterations.png", p, width = 7)
 
 ```{r}
 ggplot(draws_df) +
-    geom_line(aes(.iteration, temp, group = .chain, color = .chain)) +
+    geom_line(aes(.iteration, temp, color = chain)) +
     theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     facet_wrap(. ~ subject) +
-    labs(y = "Temperature")
+    labs(y = "Temperature") +
+    theme(axis.ticks.x = element_blank())
 
 ggsave("figs/rl/chain_iterations_temp.png", width = 7)
 
 ggplot(draws_df) +
-    geom_line(aes(.iteration, alpha_neg, group = .chain, color = .chain)) +
+    geom_line(aes(.iteration, alpha_neg, color = chain)) +
     theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     facet_wrap(. ~ subject) +
-    labs(y = "Alpha Negative")
+    labs(y = "Alpha Negative") +
+    theme(axis.ticks.x = element_blank())
 
 ggsave("figs/rl/chain_iterations_alphaneg.png", width = 7)
 
 ggplot(draws_df) +
-    geom_line(aes(.iteration, alpha_pos, group = .chain, color = .chain)) +
+    geom_line(aes(.iteration, alpha_pos, color = chain)) +
     theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     facet_wrap(. ~ subject) +
-    labs(y = "Alpha Positive")
+    labs(y = "Alpha Positive") +
+    theme(axis.ticks.x = element_blank())
 
 ggsave("figs/rl/chain_iterations_alphapos.png", width = 7)
 ```
@@ -106,73 +611,37 @@ ggsave("figs/rl/chain_iterations_alphapos.png", width = 7)
 ```{r}
 p1 <- ggplot(draws_df) +
     geom_point(
-        aes(alpha_neg, alpha_pos, group = .chain, color = .chain),
+        aes(alpha_neg, alpha_pos, color = chain),
         alpha = 0.1
     ) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     theme_bw() +
     labs(x = "alpha negative", y = "alpha positive")
 
 p2 <- ggplot(draws_df) +
     geom_point(
-        aes(alpha_neg, temp, group = .chain, color = .chain),
+        aes(alpha_neg, temp, color = chain),
         alpha = 0.1
     ) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     theme_bw() +
     labs(x = "alpha negative", y = "temperature")
 
 p3 <- ggplot(draws_df) +
     geom_point(
-        aes(alpha_pos, temp, group = .chain, color = .chain),
+        aes(alpha_pos, temp, color = chain),
         alpha = 0.1
     ) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     theme_bw() +
     labs(x = "alpha positive", y = "temperature")
 
 p1 / (p2 + p3)
 
-ggsave("figs/rl/chains_correlation.png", width = 7)
+ggsave("figs/rl/chains_correlation.png", width = 7, height = 7)
 ```
 
-Theta
-```{r}
-p1 <- ggplot(data = draws_df) +
-    geom_density(
-        aes(x = theta_prior_2),
-        fill = "purple", alpha = .5
-    ) +
-    geom_density(
-        aes(x = theta_prior_52),
-        fill = "yellow", alpha = .5
-    ) +
-    geom_density(
-        aes(x = theta_prior_104),
-        fill = "red", alpha = .5
-    ) +
-    facet_wrap(. ~ subject) +
-    theme_bw() +
-    ylim(0, 30)
-
-p2 <- ggplot(data = draws_df) +
-    geom_density(
-        aes(x = theta_2),
-        fill = "purple", alpha = .5
-    ) +
-    geom_density(
-        aes(x = theta_52),
-        fill = "yellow", alpha = .5
-    ) +
-    geom_density(
-        aes(x = theta_104),
-        fill = "red", alpha = .5
-    ) +
-    facet_wrap(. ~ subject) +
-    theme_bw() +
-    ylim(0, 30)
-
-p1 + p2
-```
-
-Alpha parameters
+### Alpha parameters
 ```{r}
 draws_df %>%
     group_by(condition) %>%
@@ -197,24 +666,35 @@ p + labs(
     caption = "Prior (blue) and posterior (red)"
 )
 ggsave("figs/rl/prior-pos-update-alphaneg.png", p,
-    width = 7
+    width = 7, height = 10
 )
 ```
 
 ```{r}
-p <- ggplot(data = draws_df) +
+p1 <- draws_df %>%
+    filter(condition == 1) %>%
+    ggplot() +
     geom_density(aes(x = alpha_neg_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = alpha_neg), fill = "red", alpha = .5) +
     theme_bw() +
-    facet_wrap(. ~ condition) +
-    xlab("Alpha_negative")
+    facet_wrap(. ~ session) +
+    xlab("Alpha_negative") +
+    labs(title = "A) Condition 1")
 
-p + labs(
-    title = "Prior Posterior update: Alpha_negative",
-    caption = "Prior (blue) and posterior (red)"
-)
-ggsave("figs/rl/prior-pos-update-alphaneg-condition.png", p,
-    width = 7
+p2 <- draws_df %>%
+    filter(condition == 2) %>%
+    ggplot() +
+    geom_density(aes(x = alpha_neg_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = alpha_neg), fill = "red", alpha = .5) +
+    theme_bw() +
+    facet_wrap(. ~ session) +
+    xlab("Alpha_negative") +
+    labs(title = "B) Condition 2")
+
+p1 / p2
+
+ggsave("figs/rl/prior-pos-update-alphaneg-condition.png",
+    width = 7, height = 5
 )
 ```
 
@@ -242,28 +722,39 @@ p + labs(
     caption = "Prior (blue) and posterior (red)"
 )
 ggsave("figs/rl/prior-pos-update-alphapos.png", p,
-    width = 7
+    width = 7, height = 10
 )
 ```
 
 ```{r}
-p <- ggplot(data = draws_df) +
+p1 <- draws_df %>%
+    filter(condition == 1) %>%
+    ggplot() +
     geom_density(aes(x = alpha_pos_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = alpha_pos), fill = "red", alpha = .5) +
     theme_bw() +
-    facet_wrap(. ~ condition) +
-    xlab("Alpha_positive")
+    facet_wrap(. ~ session) +
+    xlab("Alpha_negative") +
+    labs(title = "A) Condition 1")
 
-p + labs(
-    title = "Prior Posterior update: Alpha_positive",
-    caption = "Prior (blue) and posterior (red)"
-)
-ggsave("figs/rl/prior-pos-update-alphapos-condition.png", p,
-    width = 7
+p2 <- draws_df %>%
+    filter(condition == 2) %>%
+    ggplot() +
+    geom_density(aes(x = alpha_pos_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = alpha_pos), fill = "red", alpha = .5) +
+    theme_bw() +
+    facet_wrap(. ~ session) +
+    xlab("Alpha_negative") +
+    labs(title = "B) Condition 2")
+
+p1 / p2
+
+ggsave("figs/rl/prior-pos-update-alphapos-condition.png",
+    width = 7, height = 5
 )
 ```
 
-Temperature
+### Temperature
 ```{r}
 draws_df %>%
     group_by(condition) %>%
@@ -288,255 +779,64 @@ p + labs(
     caption = "Prior (blue) and posterior (red)"
 )
 ggsave("figs/rl/prior-pos-update-temp.png", p,
-    width = 7
+    width = 7, height = 10
 )
 ```
 
 ```{r}
-p <- ggplot(data = draws_df) +
+p1 <- draws_df %>%
+    filter(condition == 1) %>%
+    ggplot() +
     geom_density(aes(x = temp_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = temp), fill = "red", alpha = .5) +
     theme_bw() +
-    facet_wrap(. ~ condition) +
-    xlab("Temperature")
+    facet_wrap(. ~ session) +
+    xlab("Temperature") +
+    labs(title = "A) Condition 1")
 
-p + labs(
-    title = "Prior Posterior update: Temperature",
-    caption = "Prior (blue) and posterior (red)"
-)
+p2 <- draws_df %>%
+    filter(condition == 2) %>%
+    ggplot() +
+    geom_density(aes(x = temp_prior), fill = "blue", alpha = .5) +
+    geom_density(aes(x = temp), fill = "red", alpha = .5) +
+    theme_bw() +
+    facet_wrap(. ~ session) +
+    xlab("Temperature") +
+    labs(title = "B) Condition 2")
+
+p1 / p2
+
 ggsave("figs/rl/prior-pos-update-temp-condition.png", p,
-    width = 7
+    width = 7, height = 5
 )
 ```
 
-Values
-```{r}
-draws_df %>%
-    summarize(
-        mean(values_1_1),
-        # sd(values_1_1),
-        mean(values_1_2),
-        # sd(values_1_2),
-        mean(values_1_3),
-        # sd(values_1_3),
-        mean(values_1_4),
-        # sd(values_1_4),
-        mean(values_1_5),
-        # sd(values_1_5)
-    )
-```
-
-```{r}
-p1 <- ggplot(data = draws_df) +
-    geom_density(
-        aes(x = values_prior_1_1),
-        fill = "blue", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_prior_1_2),
-        fill = "purple", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_prior_1_3),
-        fill = "red", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_prior_1_4),
-        fill = "yellow", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_prior_1_5),
-        fill = "green", alpha = .3
-    ) +
-    theme_bw() +
-    labs(x = "Value", title = "Prior Values")
-
-p2 <- ggplot(data = draws_df) +
-    geom_density(
-        aes(x = values_1_1),
-        fill = "blue", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_1_2),
-        fill = "purple", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_1_3),
-        fill = "red", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_1_4),
-        fill = "yellow", alpha = .3
-    ) +
-    geom_density(
-        aes(x = values_1_5),
-        fill = "green", alpha = .3
-    ) +
-    theme_bw() +
-    labs(x = "Value", title = "Posterior Values")
-
-p1 + p2
-```
-
-```{r}
-for (f in 1:5) {
-    value_f_0 <- paste("values_1_", f, sep = "")
-    value_f_1 <- paste("values_2_", f, sep = "")
-    p <- ggplot(draws_df) +
-        geom_density(
-            aes_string(x = value_f_0),
-            fill = "orange", alpha = .3
-        ) +
-        geom_density(
-            aes_string(x = value_f_1),
-            fill = "purple", alpha = .3
-        ) +
-        theme_bw() +
-        labs(
-            title = paste("Feature", f),
-            x = "value"
-        )
-
-    assign(paste("p", f, sep = ""), p)
-}
-
-p1 + p2 + p3 + p4 + p5
-```
-
-```{r}
-p1 <- ggplot(data = draws_df) +
-    geom_density(
-        aes(x = values_2_1),
-        fill = "blue", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_2_2),
-        fill = "purple", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_2_3),
-        fill = "red", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_2_4),
-        fill = "yellow", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_2_5),
-        fill = "green", alpha = .1
-    ) +
-    theme_bw() +
-    labs(x = "Value", title = "Feature = 0")
-
-p2 <- ggplot(data = draws_df) +
-    geom_density(
-        aes(x = values_1_1),
-        fill = "blue", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_1_2),
-        fill = "purple", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_1_3),
-        fill = "red", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_1_4),
-        fill = "yellow", alpha = .1
-    ) +
-    geom_density(
-        aes(x = values_1_5),
-        fill = "green", alpha = .1
-    ) +
-    theme_bw() +
-    labs(x = "Value", title = "Feature = 1")
-
-p1 + p2
-```
-
-Posterior prediction
-```{r}
-draws_df %>%
-    group_by(condition, session) %>%
-    summarize(
-        correct_1 = mean(posteriorcorrect_1),
-        correct_50 = mean(posteriorcorrect_50),
-        correct_96 = mean(posteriorcorrect_96),
-        correct_104 = mean(posteriorcorrect_104)
-    )
-```
-
-```{r}
-p1 <- ggplot(data = draws_df) +
-    geom_density(
-        aes(x = priorcorrect_1),
-        fill = "blue", alpha = .3
-    ) +
-    geom_density(
-        aes(x = priorcorrect_50),
-        fill = "purple", alpha = .3
-    ) +
-    geom_density(
-        aes(x = priorcorrect_96),
-        fill = "red", alpha = .3
-    ) +
-    geom_density(
-        aes(x = priorcorrect_104),
-        fill = "yellow", alpha = .3
-    ) +
-    theme_bw() +
-    labs(x = "correct category")
-
-p2 <- ggplot(data = draws_df) +
-    geom_density(
-        aes(x = posteriorcorrect_1),
-        fill = "blue", alpha = .3
-    ) +
-    geom_density(
-        aes(x = posteriorcorrect_50),
-        fill = "purple", alpha = .3
-    ) +
-    geom_density(
-        aes(x = posteriorcorrect_96),
-        fill = "red", alpha = .3
-    ) +
-    geom_density(
-        aes(x = posteriorcorrect_104),
-        fill = "yellow", alpha = .1
-    ) +
-    theme_bw() +
-    labs(x = "correct category")
-
-p1 + p2
-```
-
+### Posterior prediction
 ```{r}
 rm(posteriorcorrect)
 
-for (t in 1:104) {
-    for (s in unique(draws_df$subject)) {
-        tmp_draws <- draws_df %>%
-            filter(subject == s)
-        col <- paste("tmp_draws$posteriorcorrect_", t, sep = "")
-        colvalues <- eval(parse(text = col))
-        mean_correct <- mean(colvalues)
-        sd_correct <- sd(colvalues)
-        tmp <- tibble(
-            correct = mean_correct,
-            sd = sd_correct,
-            trial = t,
-            condition = unique(tmp_draws$condition),
-            subject = s
-        )
+for (t in seq_len(104)) {
+    col <- paste("posteriorcorrect_", t, sep = "")
+    tmp <- draws_df %>%
+        select(
+            "subject", "session",
+            "condition", col
+        ) %>%
+        group_by(subject, condition, session) %>%
+        summarize_all(c(mean, sd)) %>%
+        mutate(
+            correct = fn1,
+            sd_correct = fn2,
+            trial = t
+        ) %>%
+        select(!c(fn1, fn2))
 
-        if (exists("posteriorcorrect")) {
-            posteriorcorrect <- rbind(
-                posteriorcorrect, tmp
-            )
-        } else {
-            posteriorcorrect <- tmp
-        }
+    if (exists("posteriorcorrect")) {
+        posteriorcorrect <- rbind(
+            posteriorcorrect, tmp
+        )
+    } else {
+        posteriorcorrect <- tmp
     }
 }
 ```
@@ -545,24 +845,26 @@ for (t in 1:104) {
 posteriorcorrect <- posteriorcorrect %>%
     mutate(
         condition = as.factor(condition),
+        session = as.factor(session),
         subject = as.factor(subject),
         type = "estimated"
     ) %>%
-    group_by(subject) %>%
+    group_by(subject, session) %>%
     mutate(
         cumulative = cumsum(correct) / trial
     )
 
 real_correct <- aliendata %>%
-    select(c(condition, subject, correct, trial)) %>%
+    select(c(condition, subject, session, correct, trial)) %>%
     mutate(
         condition = as.factor(condition),
         subject = as.factor(subject),
+        session = as.factor(session),
         sd = 0,
         type = "real",
         cumulative = cumsum(correct) / trial
     ) %>%
-    group_by(subject) %>%
+    group_by(subject, session) %>%
     mutate(
         cumulative = cumsum(correct) / trial
     )
@@ -572,155 +874,169 @@ posteriorcorrect <- rbind(posteriorcorrect, real_correct)
 
 ```{r}
 ggplot(data = posteriorcorrect) +
-    geom_point(aes(x = trial, y = correct, color = type)) +
+    geom_point(aes(x = trial, y = correct, color = type),
+        alpha = .1
+    ) +
     geom_smooth(aes(x = trial, y = correct, color = type)) +
     theme_bw() +
     facet_wrap(. ~ subject) +
-    scale_color_manual(values = c("orange", "purple"))
+    scale_color_manual(values = c("darkorange", "slateblue"))
 
-ggplot(data = posteriorcorrect) +
-    geom_point(aes(x = trial, y = correct, color = type)) +
+ggsave("figs/rl/pos_preds_correct_subject.png",
+    width = 7
+)
+```
+
+```{r}
+p1 <- posteriorcorrect %>%
+    filter(condition == 1) %>%
+    ggplot() +
+    geom_point(aes(x = trial, y = correct, color = type),
+        alpha = .1
+    ) +
     geom_smooth(aes(x = trial, y = correct, color = type)) +
-    geom_vline(aes(xintercept = 96), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ condition) +
-    scale_color_manual(values = c("orange", "purple"))
+    labs(title = "A) Condition 1") +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+p2 <- posteriorcorrect %>%
+    filter(condition == 2) %>%
+    ggplot() +
+    geom_point(aes(x = trial, y = correct, color = type),
+        alpha = .1
+    ) +
+    geom_smooth(aes(x = trial, y = correct, color = type)) +
+    theme_bw() +
+    labs(title = "B) Condition 2") +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+p1 / p2 +
+    plot_layout(guides = "collect")
+
+ggsave("figs/rl/pos_preds_correct_condition.png",
+    width = 7, height = 5
+)
 ```
 
 ```{r}
 ggplot(data = posteriorcorrect) +
-    geom_point(aes(x = trial, y = cumulative, color = type)) +
+    geom_point(aes(x = trial, y = cumulative, color = type),
+        alpha = .1
+    ) +
     geom_line(aes(x = trial, y = cumulative, color = type)) +
     theme_bw() +
     facet_wrap(. ~ subject) +
-    scale_color_manual(values = c("orange", "purple"))
+    scale_color_manual(values = c("darkorange", "slateblue"))
 
-ggplot(data = posteriorcorrect) +
+ggsave("figs/rl/pos_preds_cumulative_subject.png",
+    width = 7
+)
+```
+
+```{r}
+p1 <- posteriorcorrect %>%
+    filter(condition == 1) %>%
+    ggplot() +
     geom_point(aes(x = trial, y = cumulative, color = type),
-        alpha = .2
+        alpha = .05
     ) +
     geom_smooth(aes(x = trial, y = cumulative, color = type)) +
-    geom_vline(aes(xintercept = 96), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ condition) +
-    scale_color_manual(values = c("orange", "purple"))
+    labs(title = "A) Condition 1") +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+p2 <- posteriorcorrect %>%
+    filter(condition == 2) %>%
+    ggplot() +
+    geom_point(aes(x = trial, y = cumulative, color = type),
+        alpha = .05
+    ) +
+    geom_smooth(aes(x = trial, y = cumulative, color = type)) +
+    theme_bw() +
+    labs(title = "B) Condition 2") +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+p1 / p2 +
+    plot_layout(guides = "collect")
+
+ggsave("figs/rl/pos_preds_cumulative_condition.png",
+    width = 7, height = 5
+)
 ```
 
 ## Reinforcement Learning (simple)
 ### load data
 ```{r}
-sessions <- c(1, 2, 3)
-
-# chose only relevant columns
-relevant_cols <- c(
-    "alpha", "alpha_prior",
-    "temp", "temp_prior",
-    ".iteration", "chain",
-    "condition", "subject", "session"
-)
-
-for (t in 1:104) {
-    colname <- paste("posteriorcorrect[", t, "]", sep = "")
-    relevant_cols <- c(relevant_cols, colname)
-}
-
-# load csv files
-for (ses in sessions) {
-    tmp_draws_df <- read_csv(
-        paste("data/rl_simple_", ses, "_samples.csv", sep = "")
-    ) %>%
-        select(relevant_cols) %>%
-        mutate(
-            session = ses
-        )
-
-    if (exists("draws_df")) {
-        draws_df <- rbind(draws_df, tmp_draws_df)
-    } else {
-        draws_df <- tmp_draws_df
-    }
-}
-
-# update colnames
-new_colnames <- c()
-for (colname in colnames(draws_df)) {
-    if (grepl("values_prior", colname, fixed = TRUE)) { # specific case
-        new_colname <- paste("values_prior_",
-            str_extract_all(colname, "\\d+")[[1]][1], "_",
-            str_extract_all(colname, "\\d+")[[1]][2],
-            sep = ""
-        )
-        new_colnames <- c(new_colnames, new_colname)
-    } else if (grepl(",", colname, fixed = TRUE)) { # matrix
-        new_colname <- paste(str_extract(colname, "\\w+"), "_",
-            str_extract_all(colname, "\\d+")[[1]][1], "_",
-            str_extract_all(colname, "\\d+")[[1]][2],
-            sep = ""
-        )
-        new_colnames <- c(new_colnames, new_colname)
-    } else if (grepl("[", colname, fixed = TRUE)) { # array
-        new_colname <- paste(str_extract(colname, "\\w+"), "_",
-            str_extract(colname, "\\d+"),
-            sep = ""
-        )
-        new_colnames <- c(new_colnames, new_colname)
-    } else {
-        new_colnames <- c(new_colnames, colname)
-    }
-}
-colnames(draws_df) <- new_colnames
+draws_df <- read_csv("data/rl_simple_samples.csv") %>%
+    mutate(
+        chain = as.factor(.chain)
+    )
 ```
 
-### inspection
-Chains
+### Chains
 ```{r}
 p1 <- ggplot(draws_df) +
-    geom_line(aes(.iteration, temp, group = .chain, color = .chain)) +
+    geom_line(aes(.iteration, temp, color = chain)) +
     theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     labs(y = "Temperature")
 
 p2 <- ggplot(draws_df) +
-    geom_line(aes(.iteration, alpha, group = .chain, color = .chain)) +
+    geom_line(aes(.iteration, alpha, color = chain)) +
     theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     labs(y = "Alpha")
 
 p1 / p2 +
     plot_annotation(title = "Chain iterations")
 
-ggsave("figs/rl_simple/chain_iterations.png")
+ggsave("figs/rl_simple/chain_iterations.png",
+    width = 7
+)
 ```
 
 ```{r}
 ggplot(draws_df) +
-    geom_line(aes(.iteration, temp, group = .chain, color = .chain)) +
+    geom_line(aes(.iteration, temp, color = chain)) +
     theme_bw() +
     facet_wrap(. ~ subject) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     labs(y = "Temperature")
 
-ggsave("figs/rl_simple/chain_iterations_temp.png")
+ggsave("figs/rl_simple/chain_iterations_temp.png",
+    width = 7
+)
 
 ggplot(draws_df) +
-    geom_line(aes(.iteration, alpha, group = .chain, color = .chain)) +
+    geom_line(aes(.iteration, alpha, color = chain)) +
     theme_bw() +
     facet_wrap(. ~ subject) +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     labs(y = "Alpha")
 
-ggsave("figs/rl_simple/chain_iterations_alpha.png")
+ggsave("figs/rl_simple/chain_iterations_alpha.png",
+    width = 7
+)
 ```
 
 ```{r}
 ggplot(draws_df) +
     geom_point(
-        aes(alpha, temp, group = .chain, color = .chain),
+        aes(alpha, temp, color = chain),
         alpha = 0.1
     ) +
     theme_bw() +
+    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     labs(x = "alpha", y = "temperature")
 
-ggsave("figs/rl_simple/chains_correlation.png", width = 7)
+ggsave("figs/rl_simple/chains_correlation.png", width = 7, height = 7)
 ```
 
-Alpha parameter
+### Alpha parameter
 ```{r}
 draws_df %>%
     group_by(condition) %>%
@@ -738,10 +1054,6 @@ ggplot(data = draws_df) +
     geom_density(aes(x = alpha), fill = "red", alpha = .5) +
     theme_bw() +
     facet_wrap(. ~ subject) +
-    labs(
-        title = "Prior Posterior update: Alpha",
-        caption = "Prior (blue) and posterior (red)"
-    ) +
     xlab("Alpha")
 
 ggsave("figs/rl_simple/prior-pos-update-alpha.png", width = 7)
@@ -753,10 +1065,6 @@ ggplot(data = draws_df) +
     geom_density(aes(x = alpha), fill = "red", alpha = .5) +
     theme_bw() +
     facet_wrap(. ~ condition) +
-    labs(
-        title = "Prior Posterior update: Alpha",
-        caption = "Prior (blue) and posterior (red)"
-    ) +
     xlab("Alpha")
 
 ggsave("figs/rl_simple/prior-pos-update-alpha-condtion.png", width = 7)
@@ -780,10 +1088,6 @@ ggplot(data = draws_df) +
     geom_density(aes(x = temp), fill = "red", alpha = .5) +
     theme_bw() +
     facet_wrap(. ~ subject) +
-    labs(
-        title = "Prior Posterior update: Temperature",
-        caption = "Prior (blue) and posterior (red)"
-    ) +
     xlab("Temperature")
 
 ggsave("figs/rl_simple/prior-pos-update-temp.png", width = 7)
@@ -795,42 +1099,73 @@ ggplot(data = draws_df) +
     geom_density(aes(x = temp), fill = "red", alpha = .5) +
     theme_bw() +
     facet_wrap(. ~ condition) +
-    labs(
-        title = "Prior Posterior update: Temperature",
-        caption = "Prior (blue) and posterior (red)"
-    ) +
     xlab("Temperature")
 
 ggsave("figs/rl_simple/prior-pos-update-temp-condition.png", width = 7)
 ```
 
-Posterior predictions
+### Posterior predictions
 ```{r}
 rm(posteriorcorrect)
 
 for (t in 1:104) {
-    for (s in unique(draws_df$subject)) {
-        tmp_draws <- draws_df %>%
-            filter(subject == s)
-        col <- paste("tmp_draws$posteriorcorrect_", t, sep = "")
-        colvalues <- eval(parse(text = col))
-        mean_correct <- mean(colvalues)
-        sd_correct <- sd(colvalues)
-        tmp <- tibble(
-            correct = mean_correct,
-            sd = sd_correct,
-            trial = t,
-            condition = unique(tmp_draws$condition),
-            subject = s
-        )
-
-        if (exists("posteriorcorrect")) {
-            posteriorcorrect <- rbind(
-                posteriorcorrect, tmp
+    for (ses in unique(draws_df$session)) {
+        for (sub in unique(draws_df$subject)) {
+            tmp_draws <- draws_df %>%
+                filter(
+                    subject == sub &
+                        session == ses
+                )
+            col <- paste("tmp_draws$posteriorcorrect_", t, sep = "")
+            colvalues <- eval(parse(text = col))
+            mean_correct <- mean(colvalues)
+            sd_correct <- sd(colvalues)
+            tmp <- tibble(
+                correct = mean_correct,
+                sd = sd_correct,
+                trial = t,
+                condition = unique(tmp_draws$condition),
+                subject = sub,
+                session = ses
             )
-        } else {
-            posteriorcorrect <- tmp
+
+            if (exists("posteriorcorrect")) {
+                posteriorcorrect <- rbind(
+                    posteriorcorrect, tmp
+                )
+            } else {
+                posteriorcorrect <- tmp
+            }
         }
+    }
+}
+```
+
+```{r}
+rm(posteriorcorrect)
+
+for (t in seq_len(104)) {
+    col <- paste("posteriorcorrect_", t, sep = "")
+    tmp <- draws_df %>%
+        select(
+            "subject", "session",
+            "condition", col
+        ) %>%
+        group_by(subject, condition, session) %>%
+        summarize_all(c(mean, sd)) %>%
+        mutate(
+            correct = fn1,
+            sd_correct = fn2,
+            trial = t
+        ) %>%
+        select(!c(fn1, fn2))
+
+    if (exists("posteriorcorrect")) {
+        posteriorcorrect <- rbind(
+            posteriorcorrect, tmp
+        )
+    } else {
+        posteriorcorrect <- tmp
     }
 }
 ```
@@ -839,24 +1174,26 @@ for (t in 1:104) {
 posteriorcorrect <- posteriorcorrect %>%
     mutate(
         condition = as.factor(condition),
+        session = as.factor(session),
         subject = as.factor(subject),
         type = "estimated"
     ) %>%
-    group_by(subject) %>%
+    group_by(subject, session) %>%
     mutate(
         cumulative = cumsum(correct) / trial
     )
 
 real_correct <- aliendata %>%
-    select(c(condition, subject, correct, trial)) %>%
+    select(c(condition, subject, session, correct, trial)) %>%
     mutate(
         condition = as.factor(condition),
         subject = as.factor(subject),
+        session = as.factor(session),
         sd = 0,
         type = "real",
         cumulative = cumsum(correct) / trial
     ) %>%
-    group_by(subject) %>%
+    group_by(subject, session) %>%
     mutate(
         cumulative = cumsum(correct) / trial
     )
@@ -866,36 +1203,96 @@ posteriorcorrect <- rbind(posteriorcorrect, real_correct)
 
 ```{r}
 ggplot(data = posteriorcorrect) +
-    geom_point(aes(x = trial, y = correct, color = type)) +
+    geom_point(aes(x = trial, y = correct, color = type),
+        alpha = .1
+    ) +
     geom_smooth(aes(x = trial, y = correct, color = type)) +
     theme_bw() +
     facet_wrap(. ~ subject) +
-    scale_color_manual(values = c("orange", "purple"))
+    scale_color_manual(values = c("darkorange", "slateblue"))
 
-ggplot(data = posteriorcorrect) +
-    geom_point(aes(x = trial, y = correct, color = type)) +
+ggsave("figs/rl_simple/pos_preds_correct_subject.png",
+    width = 7
+)
+```
+
+```{r}
+p1 <- posteriorcorrect %>%
+    filter(condition == 1) %>%
+    ggplot() +
+    geom_point(aes(x = trial, y = correct, color = type),
+        alpha = .1
+    ) +
     geom_smooth(aes(x = trial, y = correct, color = type)) +
-    geom_vline(aes(xintercept = 96), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ condition) +
-    scale_color_manual(values = c("orange", "purple"))
+    labs(title = "A) Condition 1") +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+p2 <- posteriorcorrect %>%
+    filter(condition == 2) %>%
+    ggplot() +
+    geom_point(aes(x = trial, y = correct, color = type),
+        alpha = .1
+    ) +
+    geom_smooth(aes(x = trial, y = correct, color = type)) +
+    theme_bw() +
+    labs(title = "B) Condition 2") +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+p1 / p2 +
+    plot_layout(guides = "collect")
+
+ggsave("figs/rl_simple/pos_preds_correct_condition.png",
+    width = 7
+)
 ```
 
 ```{r}
 ggplot(data = posteriorcorrect) +
-    geom_point(aes(x = trial, y = cumulative, color = type)) +
+    geom_point(aes(x = trial, y = cumulative, color = type),
+        alpha = .1
+    ) +
     geom_line(aes(x = trial, y = cumulative, color = type)) +
     theme_bw() +
     facet_wrap(. ~ subject) +
-    scale_color_manual(values = c("orange", "purple"))
+    scale_color_manual(values = c("darkorange", "slateblue"))
 
-ggplot(data = posteriorcorrect) +
+ggsave("figs/rl_simple/pos_preds_cumulative_subject.png",
+    width = 7
+)
+```
+
+```{r}
+p1 <- posteriorcorrect %>%
+    filter(condition == 1) %>%
+    ggplot() +
     geom_point(aes(x = trial, y = cumulative, color = type),
-        alpha = .2
+        alpha = .05
     ) +
     geom_smooth(aes(x = trial, y = cumulative, color = type)) +
-    geom_vline(aes(xintercept = 96), linetype = "dashed") +
     theme_bw() +
-    facet_wrap(. ~ condition) +
-    scale_color_manual(values = c("orange", "purple"))
+    labs(title = "A) Condition 1") +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+p2 <- posteriorcorrect %>%
+    filter(condition == 2) %>%
+    ggplot() +
+    geom_point(aes(x = trial, y = cumulative, color = type),
+        alpha = .05
+    ) +
+    geom_smooth(aes(x = trial, y = cumulative, color = type)) +
+    theme_bw() +
+    labs(title = "B) Condition 2") +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c("darkorange", "slateblue"))
+
+p1 / p2 +
+    plot_layout(guides = "collect")
+
+ggsave("figs/rl_simple/pos_preds_cumulative_condition.png",
+    width = 7
+)
 ```
