@@ -60,6 +60,11 @@ pointwise_df <- pointwise_df %>%
             is.infinite(influence_pareto_k), NA, influence_pareto_k
         )
     )
+
+compare_df <- compare_df %>%
+    mutate(
+        model_name = as.character(model_names[model])
+    )
 ```
 
 ## PSIS diagnostic
@@ -102,10 +107,11 @@ ggplot(data = pointwise_df) +
         y = "Pareto k",
         color = "Model"
     ) +
-    scale_color_brewer(palette = "Dark2")
+    scale_color_brewer(palette = "Dark2") +
+    theme(legend.position = "bottom")
 
 ggsave("figs/model_comparison/psis_diagnostics.png",
-    width = 7, height = 5
+    width = 7, height = 7
 )
 ```
 
@@ -150,7 +156,8 @@ compare_df <- compare_df %>%
             ifelse(looic == max(looic), 3, 2)
         ),
         condition = ifelse(condition == 1,
-                           "dyad", "individual")
+            "dyad", "individual"
+        )
     )
 
 compare_df %>%
@@ -163,13 +170,13 @@ compare_df %>%
 
 ```{r}
 cm <- compare_df %>%
-    group_by(session, model, condition) %>%
+    group_by(session, model_name, condition) %>%
     summarize(
         freq = sum(model_rank == 1),
         weight = mean(model_weights)
     )
 
-ggplot(cm, aes(model, session, fill = freq)) +
+ggplot(cm, aes(model_name, session, fill = freq)) +
     geom_tile() +
     geom_text(aes(label = freq)) +
     theme_bw() +
@@ -187,7 +194,7 @@ ggsave("figs/model_comparison/model_rank_matrix.png",
 ```
 
 ```{r}
-ggplot(cm, aes(model, session, fill = weight)) +
+ggplot(cm, aes(model_name, session, fill = weight)) +
     geom_tile() +
     geom_text(aes(label = round(weight, 3))) +
     theme_bw() +
