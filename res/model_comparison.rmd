@@ -181,7 +181,7 @@ ggplot(cm, aes(model_name, session, fill = freq)) +
     geom_text(aes(label = freq)) +
     theme_bw() +
     facet_wrap(. ~ condition) +
-    scale_fill_gradient(low = "white", high = "steelblue") +
+    scale_fill_gradient(low = "white", high = "palegreen4") +
     labs(
         x = "model",
         y = "session"
@@ -199,7 +199,7 @@ ggplot(cm, aes(model_name, session, fill = weight)) +
     geom_text(aes(label = round(weight, 3))) +
     theme_bw() +
     facet_wrap(. ~ condition) +
-    scale_fill_gradient(low = "white", high = "steelblue") +
+    scale_fill_gradient(low = "white", high = "palegreen4") +
     labs(
         x = "model",
         y = "session"

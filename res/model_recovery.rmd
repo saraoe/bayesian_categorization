@@ -146,7 +146,7 @@ ggplot(cm, aes(true_model, model, fill = freq)) +
     geom_tile() +
     geom_text(aes(label = freq)) +
     theme_bw() +
-    scale_fill_gradient(low = "white", high = "steelblue") +
+    scale_fill_gradient(low = "white", high = "palegreen4") +
     labs(
         x = "True Model",
         y = "Best Model Fit"
