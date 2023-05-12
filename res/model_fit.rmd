@@ -28,101 +28,126 @@ draws_df <- read_csv("data/gcm_samples.csv") %>%
 
 ### chains
 ```{r}
-sub1_df <- draws_df %>%
-    filter(subject == 1)
+chains_df <- draws_df %>%
+    filter(subject == 1 | subject == 101) %>%
+    mutate(
+        condition = ifelse(
+            condition == 1,
+            "dyad", "individual"
+        )
+    )
 
-p1 <- ggplot(sub1_df) +
-    geom_line(aes(.iteration, c, color = chain)) +
-    theme_bw() +
-    facet_wrap(. ~ session, ncol = 1) +
-    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
-    labs(y = "c")
+for (ses in seq_len(3)) {
+    chains_ses_df <- chains_df %>%
+        filter(session == ses)
 
-ggsave("figs/gcm/chains_iteration_c_sub_1.png", p1,
-    width = 7, height = 7
-)
+    p1 <- ggplot(chains_ses_df) +
+        geom_line(aes(.iteration, c, color = chain)) +
+        theme_bw() +
+        facet_wrap(. ~ condition, ncol = 1) +
+        scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+        labs(y = "c")
 
-p2 <- ggplot(sub1_df) +
-    geom_line(aes(.iteration, w_1, color = chain)) +
-    theme_bw() +
-    facet_wrap(. ~ session, ncol = 1) +
-    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
-    labs(y = latex2exp::TeX("$w_1$"))
+    p2 <- ggplot(chains_ses_df) +
+        geom_line(aes(.iteration, w_1, color = chain)) +
+        theme_bw() +
+        facet_wrap(. ~ condition, ncol = 1) +
+        scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+        labs(y = latex2exp::TeX("$w_1$"))
 
-ggsave("figs/gcm/chains_iteration_w1_sub_1.png", p2,
-    width = 7, height = 7
-)
+    p3 <- ggplot(chains_ses_df) +
+        geom_line(aes(.iteration, w_2, color = chain)) +
+        theme_bw() +
+        facet_wrap(. ~ condition, ncol = 1) +
+        scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+        labs(y = latex2exp::TeX("$w_2$"))
 
-p3 <- ggplot(sub1_df) +
-    geom_line(aes(.iteration, w_2, color = chain)) +
-    theme_bw() +
-    facet_wrap(. ~ session, ncol = 1) +
-    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
-    labs(y = latex2exp::TeX("$w_2$"))
+    p4 <- ggplot(chains_ses_df) +
+        geom_line(aes(.iteration, w_3, color = chain)) +
+        theme_bw() +
+        facet_wrap(. ~ condition, ncol = 1) +
+        scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+        labs(y = latex2exp::TeX("$w_3$"))
 
-ggsave("figs/gcm/chains_iteration_w2_sub_1.png", p3,
-    width = 7, height = 7
-)
+    p5 <- ggplot(chains_ses_df) +
+        geom_line(aes(.iteration, w_4, color = chain)) +
+        theme_bw() +
+        facet_wrap(. ~ condition, ncol = 1) +
+        scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+        labs(y = latex2exp::TeX("$w_4$"))
 
-p4 <- ggplot(sub1_df) +
-    geom_line(aes(.iteration, w_3, color = chain)) +
-    theme_bw() +
-    facet_wrap(. ~ session, ncol = 1) +
-    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
-    labs(y = latex2exp::TeX("$w_3$"))
+    p6 <- ggplot(chains_ses_df) +
+        geom_line(aes(.iteration, w_5, color = chain)) +
+        theme_bw() +
+        facet_wrap(. ~ condition, ncol = 1) +
+        scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
+        labs(y = latex2exp::TeX("$w_5$"))
 
-ggsave("figs/gcm/chains_iteration_w3_sub_1.png", p4,
-    width = 7, height = 7
-)
+    (p1 + p2) / (p3 + p4) / (p5 + p6) +
+        plot_layout(guides = "collect")
 
-p5 <- ggplot(sub1_df) +
-    geom_line(aes(.iteration, w_4, color = chain)) +
-    theme_bw() +
-    facet_wrap(. ~ session, ncol = 1) +
-    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
-    labs(y = latex2exp::TeX("$w_4$"))
-
-ggsave("figs/gcm/chains_iteration_w4_sub_1.png", p5,
-    width = 7, height = 7
-)
-
-p6 <- ggplot(sub1_df) +
-    geom_line(aes(.iteration, w_5, color = chain)) +
-    theme_bw() +
-    facet_wrap(. ~ session, ncol = 1) +
-    scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
-    labs(y = latex2exp::TeX("$w_5$"))
-
-ggsave("figs/gcm/chains_iteration_w5_sub_1.png", p6,
-    width = 7, height = 7
-)
-
-(p1 + p2) / (p3 + p4) / (p5 + p6) +
-    plot_layout(guides = "collect")
-
-ggsave("figs/gcm/chains_iteration_sub_1.png",
-    width = 7, height = 7
-)
+    ggsave(
+        paste("figs/gcm/chains_iteration_ses",
+            ses, ".png",
+            sep = ""
+        ),
+        width = 7, height = 7
+    )
+}
 ```
 
 ### c parameter
 ```{r}
 draws_df %>%
-    filter(subject == 1) %>%
+    filter(subject == 1 | subject == 101) %>%
+    mutate(
+        condition = ifelse(
+            condition == 1,
+            "dyad", "individual"
+        )
+    ) %>%
     ggplot() +
     geom_density(aes(x = c_prior), fill = "blue", alpha = .5) +
     geom_density(aes(x = c), fill = "red", alpha = .5) +
     theme_bw() +
-    facet_wrap(. ~ session, ncol = 1) +
+    facet_wrap(session ~ condition, ncol = 2) +
     xlab("c")
 
-ggsave("figs/gcm/prior-pos-update-c_subject_1.png",
-    width = 7, height = 5
+ggsave("figs/gcm/prior-pos-update-c.png",
+    width = 7, height = 7
 )
 ```
 
 ```{r}
-c_results <- draws_df %>%
+draws_df %>%
+    group_by(
+        condition, session, .iteration
+    ) %>%
+    mutate(
+        condition = ifelse(
+            condition == 1,
+            "dyad", "individual"
+        )
+    ) %>%
+    summarize(
+        mean = mean(c)
+    ) %>%
+    pivot_wider(names_from = condition, values_from = mean) %>%
+    mutate(diff = dyad - individual) %>%
+    group_by(session) %>%
+    summarize(
+        mean_ind = mean(individual),
+        sd_ind = sd(individual),
+        mean_dyad = mean(dyad),
+        sd_dyad = sd(dyad),
+        mean_diff = mean(diff),
+        sd_diff = sd(diff),
+        ER = sum(diff > 0) / sum(diff <= 0),
+    )
+```
+
+```{r}
+c_median <- draws_df %>%
     group_by(condition, session, subject) %>%
     summarize(
         mean = mean(c),
@@ -136,22 +161,13 @@ c_results <- draws_df %>%
             "dyad", "individual"
         )
     )
-
-draws_df %>%
-    group_by(condition, session) %>%
-    summarize(
-        mean = mean(c),
-        median = median(c),
-        sd = sd(c)
-    )
 ```
 
 ```{r}
-ggplot(c_results, aes(
-        x = session, y = median,
-        color = condition, fill = condition
-        )
-        ) +
+ggplot(c_median, aes(
+    x = session, y = median,
+    color = condition, fill = condition
+)) +
     ggdist::stat_halfeye(
         # move to the right
         justification = -0.2,
@@ -166,10 +182,12 @@ ggplot(c_results, aes(
     scale_color_manual(values = c("darkorange", "slateblue")) +
     scale_fill_manual(values = c("darkorange", "slateblue")) +
     labs(y = "c") +
-    coord_flip()
+    coord_flip() +
+    theme(legend.position = "bottom")
 
 ggsave("figs/gcm/result_c.png",
-       width = 7, height = 5)
+    width = 7, height = 5
+)
 ```
 
 ### w parameters
@@ -177,47 +195,47 @@ ggsave("figs/gcm/result_c.png",
 rm(weights_draws_df) # rm in case it is already defined
 
 for (con in unique(draws_df$condition)) {
-  for (ses in unique(draws_df$session)) {
-    for (sub in unique(draws_df$subject)) {
-      weights <- draws_df %>%
-        filter(
-          condition == con &
-            session == ses &
-            subject == sub
-        ) %>%
-        pivot_longer(
-          c("w_1", "w_2", "w_3", "w_4", "w_5"),
-          names_to = "features", values_to = "weights"
-        ) %>%
-        mutate(feature_number = str_extract(features, "\\d+")) %>%
-        select(c(feature_number, weights)) %>%
-        mutate(
-          condition = con,
-          session = ses,
-          subject = sub
-        )
+    for (ses in unique(draws_df$session)) {
+        for (sub in unique(draws_df$subject)) {
+            weights <- draws_df %>%
+                filter(
+                    condition == con &
+                        session == ses &
+                        subject == sub
+                ) %>%
+                pivot_longer(
+                    c("w_1", "w_2", "w_3", "w_4", "w_5"),
+                    names_to = "features", values_to = "weights"
+                ) %>%
+                mutate(feature_number = str_extract(features, "\\d+")) %>%
+                select(c(feature_number, weights)) %>%
+                mutate(
+                    condition = con,
+                    session = ses,
+                    subject = sub
+                )
 
-      weights_prior <- draws_df %>%
-        filter(
-          condition == con &
-            session == ses &
-            subject == sub
-        ) %>%
-        pivot_longer(
-          c("w_prior_1", "w_prior_2", "w_prior_3", "w_prior_4", "w_prior_5"),
-          names_to = "features", values_to = "weights_prior"
-        ) %>%
-        select(c(weights_prior))
+            weights_prior <- draws_df %>%
+                filter(
+                    condition == con &
+                        session == ses &
+                        subject == sub
+                ) %>%
+                pivot_longer(
+                    c("w_prior_1", "w_prior_2", "w_prior_3", "w_prior_4", "w_prior_5"),
+                    names_to = "features", values_to = "weights_prior"
+                ) %>%
+                select(c(weights_prior))
 
-      tmp <- cbind(weights, weights_prior)
+            tmp <- cbind(weights, weights_prior)
 
-      if (exists("weights_draws_df")) {
-        weights_draws_df <- rbind(weights_draws_df, tmp)
-      } else {
-        weights_draws_df <- tmp
-      }
+            if (exists("weights_draws_df")) {
+                weights_draws_df <- rbind(weights_draws_df, tmp)
+            } else {
+                weights_draws_df <- tmp
+            }
+        }
     }
-  }
 }
 
 rm(weights, weights_prior, tmp)
@@ -243,11 +261,83 @@ weights_draws_df <- weights_draws_df %>%
         ),
         weight_diff = weights - optimal_weight
     )
-
 ```
 
 ```{r}
-w_results <- weights_draws_df %>%
+round_3 <- function(x) {
+    return(round(x, 3))
+}
+for (f in seq_len(5)) {
+    col <- paste("w_", f, sep = "")
+    results_w <- draws_df %>%
+        select(c("condition", "session", ".iteration", col)) %>%
+        rename(w = col) %>%
+        group_by(
+            condition, session, .iteration
+        ) %>%
+        mutate(
+            condition = ifelse(
+                condition == 1,
+                "dyad", "individual"
+            ),
+            optimal_weight = as.numeric(
+                optimal_weights[f][[1]][session]
+            ),
+            w_delta = abs(w - optimal_weight)
+        ) %>%
+        summarize_all(mean) %>%
+        select(!w) %>%
+        pivot_wider(names_from = condition, values_from = w_delta) %>%
+        mutate(diff = individual - dyad) %>%
+        group_by(session) %>%
+        summarize(
+            mean_ind = mean(individual),
+            sd_ind = sd(individual),
+            mean_dyad = mean(dyad),
+            sd_dyad = sd(dyad),
+            mean_diff = mean(diff),
+            sd_diff = sd(diff),
+            ER = sum(diff > 0) / sum(diff <= 0),
+            optimal_weight = unique(optimal_weight)
+        ) %>%
+        mutate_all(round_3)
+    print(f)
+    print(results_w)
+}
+```
+
+```{r}
+prior_pos_df <- weights_draws_df %>%
+    filter(subject == 1 | subject == 101) %>%
+    mutate(
+        condition = ifelse(
+            condition == 1,
+            "dyad", "individual"
+        )
+    )
+
+for (ses in seq_len(3)) {
+    prior_pos_df %>%
+        filter(session == ses) %>%
+        ggplot() +
+        geom_density(aes(x = weights_prior), fill = "blue", alpha = .5) +
+        geom_density(aes(x = weights), fill = "red", alpha = .5) +
+        theme_bw() +
+        facet_wrap(feature_number ~ condition, ncol = 2) +
+        xlab("weights")
+
+    ggsave(
+        paste("figs/gcm/prior-pos-update-w_ses",
+            ses, ".png",
+            sep = ""
+        ),
+        width = 7, height = 10
+    )
+}
+```
+
+```{r}
+w_median <- weights_draws_df %>%
     group_by(condition, session, subject, feature_number) %>%
     summarize(
         mean = mean(weights),
@@ -267,57 +357,14 @@ w_results <- weights_draws_df %>%
             "dyad", "individual"
         )
     )
-
-weights_draws_df %>%
-    group_by(condition, session, feature_number) %>%
-    summarize(
-        mean = mean(weights),
-        median = median(weights),
-        sd = sd(weights)
-    )
 ```
 
 ```{r}
-p1 <- weights_draws_df %>%
-    filter(subject == 1 & session == 1) %>%
-    ggplot() +
-    geom_density(aes(x = weights_prior), fill = "blue", alpha = .5) +
-    geom_density(aes(x = weights), fill = "red", alpha = .5) +
-    theme_bw() +
-    facet_wrap(. ~ feature_number) +
-    xlab("weights")
-
-p2 <- weights_draws_df %>%
-    filter(subject == 1 & session == 2) %>%
-    ggplot() +
-    geom_density(aes(x = weights_prior), fill = "blue", alpha = .5) +
-    geom_density(aes(x = weights), fill = "red", alpha = .5) +
-    theme_bw() +
-    facet_wrap(. ~ feature_number) +
-    xlab("weights")
-
-p3 <- weights_draws_df %>%
-    filter(subject == 1 & session == 3) %>%
-    ggplot() +
-    geom_density(aes(x = weights_prior), fill = "blue", alpha = .5) +
-    geom_density(aes(x = weights), fill = "red", alpha = .5) +
-    theme_bw() +
-    facet_wrap(. ~ feature_number) +
-    xlab("weights")
-
-p1 / p2 / p3
-
-ggsave("figs/gcm/prior-pos-update-w_subject_1.png",
-    width = 7, height = 5
-)
-```
-
-```{r}
-ggplot(w_results
-        ) +
-    ggdist::stat_halfeye(aes(
-        x = feature_number, y = median,
-        fill = condition
+ggplot(w_median) +
+    ggdist::stat_halfeye(
+        aes(
+            x = feature_number, y = median,
+            fill = condition
         ),
         # move to the right
         justification = -0.2,
@@ -327,31 +374,38 @@ ggplot(w_results
         # alpha
         alpha = .5
     ) +
-    geom_point(aes(
-        x = feature_number, y = median,
-        color = condition
+    geom_point(
+        aes(
+            x = feature_number, y = median,
+            color = condition
         ),
-        alpha = .2) +
-    geom_point(aes(
-        x = feature_number, y = optimal),
-        shape = 4, size = 3) +
+        alpha = .2
+    ) +
+    geom_point(
+        aes(
+            x = feature_number, y = optimal
+        ),
+        shape = 4, size = 3
+    ) +
     theme_bw() +
     facet_wrap(. ~ session, ncol = 1) +
     scale_color_manual(values = c("darkorange", "slateblue")) +
     scale_fill_manual(values = c("darkorange", "slateblue")) +
     labs(y = "w", x = "feature dimension") +
-    coord_flip()
+    coord_flip() +
+    scale_x_discrete(limits = rev) +
+    theme(legend.position = "bottom")
 
 ggsave("figs/gcm/result_w.png",
-       width = 7, height = 10)
+    width = 7, height = 10
+)
 ```
 
 ```{r}
-ggplot(w_results, aes(
-        x = feature_number, y = median_diff,
-        color = condition, fill = condition
-        )
-        ) +
+ggplot(w_median, aes(
+    x = feature_number, y = median_diff,
+    color = condition, fill = condition
+)) +
     ggdist::stat_halfeye(
         # move to the right
         justification = -0.2,
@@ -363,7 +417,8 @@ ggplot(w_results, aes(
     ) +
     geom_point(alpha = .5) +
     geom_hline(aes(yintercept = 0),
-               linetype = "dashed") +
+        linetype = "dashed"
+    ) +
     theme_bw() +
     facet_wrap(. ~ session, ncol = 1) +
     scale_color_manual(values = c("darkorange", "slateblue")) +
@@ -372,7 +427,8 @@ ggplot(w_results, aes(
     coord_flip()
 
 ggsave("figs/gcm/result_w_diff.png",
-       width = 7, height = 10)
+    width = 7, height = 10
+)
 ```
 
 ### posterior predictions
@@ -446,7 +502,9 @@ posteriorcorrect %>%
     geom_smooth(aes(x = trial, y = correct, color = type)) +
     theme_bw() +
     facet_wrap(. ~ session) +
-    scale_color_manual(values = c("darkorange", "slateblue"))
+    labs(color = "") +
+    scale_color_manual(values = c("darkorange", "slateblue")) +
+    theme(legend.position = "bottom")
 
 ggsave("figs/gcm/pos_preds_correct_subject_1.png",
     width = 7, height = 5
@@ -463,7 +521,9 @@ posteriorcorrect %>%
     geom_line(aes(x = trial, y = cumulative, color = type)) +
     theme_bw() +
     facet_wrap(. ~ session) +
-    scale_color_manual(values = c("darkorange", "slateblue"))
+    labs(color = "") +
+    scale_color_manual(values = c("darkorange", "slateblue")) +
+    theme(legend.position = "bottom")
 
 ggsave("figs/gcm/pos_preds_cumulative_subject_1.png",
     width = 7, height = 5
@@ -480,7 +540,9 @@ p1 <- posteriorcorrect %>%
     geom_smooth(aes(x = trial, y = correct, color = type)) +
     theme_bw() +
     facet_wrap(. ~ session) +
-    scale_color_manual(values = c("darkorange", "slateblue"))
+    labs(color = "") +
+    scale_color_manual(values = c("darkorange", "slateblue")) +
+    theme(legend.position = "bottom")
 
 ggsave("figs/gcm/pos_preds_correct_condition1.png", p1,
     width = 7, height = 5
@@ -495,7 +557,9 @@ p2 <- posteriorcorrect %>%
     geom_smooth(aes(x = trial, y = correct, color = type)) +
     theme_bw() +
     facet_wrap(. ~ session) +
-    scale_color_manual(values = c("darkorange", "slateblue"))
+    labs(color = "") +
+    scale_color_manual(values = c("darkorange", "slateblue")) +
+    theme(legend.position = "bottom")
 
 
 ggsave("figs/gcm/pos_preds_correct_condition2.png", p2,
@@ -516,7 +580,9 @@ p1 <- posteriorcorrect %>%
     geom_smooth(aes(x = trial, y = cumulative, color = type)) +
     theme_bw() +
     facet_wrap(. ~ session) +
-    scale_color_manual(values = c("darkorange", "slateblue"))
+    labs(color = "") +
+    scale_color_manual(values = c("darkorange", "slateblue")) +
+    theme(legend.position = "bottom")
 
 ggsave("figs/gcm/pos_preds_cumulative_condition1.png", p1,
     width = 7, height = 5
@@ -531,7 +597,9 @@ p2 <- posteriorcorrect %>%
     geom_smooth(aes(x = trial, y = cumulative, color = type)) +
     theme_bw() +
     facet_wrap(. ~ session) +
-    scale_color_manual(values = c("darkorange", "slateblue"))
+    labs(color = "") +
+    scale_color_manual(values = c("darkorange", "slateblue")) +
+    theme(legend.position = "bottom")
 
 ggsave("figs/gcm/pos_preds_cumulative_condition2.png", p2,
     width = 7, height = 5
@@ -539,6 +607,34 @@ ggsave("figs/gcm/pos_preds_cumulative_condition2.png", p2,
 
 p1 / p2 +
     plot_layout(guides = "collect")
+```
+
+```{r}
+posteriorcorrect %>%
+    mutate(
+        type = as.factor(type),
+        condition = as.factor(ifelse(
+            condition == 1,
+            "dyad", "individual"
+        ))
+    ) %>%
+    ggplot() +
+    geom_point(aes(x = trial, y = cumulative, color = type:condition),
+        alpha = .03
+    ) +
+    geom_smooth(aes(x = trial, y = cumulative, color = type:condition)) +
+    theme_bw() +
+    facet_wrap(. ~ session) +
+    scale_color_manual(values = c(
+        "darkorange1", "darkorange4",
+        "slateblue1", "slateblue4"
+    )) +
+    labs(color = "") +
+    theme(legend.position = "bottom")
+
+ggsave("figs/gcm/pos_preds_cumulative.png",
+    width = 7, height = 7
+)
 ```
 
 ## Reinforcement Learning (assymetrical)
