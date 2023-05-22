@@ -629,7 +629,9 @@ posteriorcorrect %>%
         "darkorange1", "darkorange4",
         "slateblue1", "slateblue4"
     )) +
-    labs(color = "") +
+    labs(
+        y = "cumulative performance",
+        color = "") +
     theme(legend.position = "bottom")
 
 ggsave("figs/gcm/pos_preds_cumulative.png",
