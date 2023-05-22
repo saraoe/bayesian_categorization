@@ -35,7 +35,13 @@ draws_df <- read_csv(
     "data/recovery/model_validation_samples_gcm.csv"
 ) %>%
     mutate(
-        chain = as.factor(.chain)
+        chain = as.factor(.chain),
+        true_c = 3.1034433173947,
+        true_w_1 = 0.364363323188127,
+        true_w_2 = 0.280051971737203,
+        true_w_3 = 0.272513980822017,
+        true_w_4 = 0.0400306802742893,
+        true_w_5 = 0.0430400439783634
     )
 
 colnames(draws_df) <- update_colnames(colnames(draws_df))
@@ -97,6 +103,7 @@ ggplot(data = draws_df) +
     geom_density(aes(x = c),
         fill = "red", alpha = .5
     ) +
+    geom_vline(aes(xintercept = true_c), linetype = "dashed") +
     theme_bw() +
     labs(x = "c")
 
@@ -121,7 +128,19 @@ weights_prior <- draws_df %>%
     ) %>%
     select(c(weights_prior))
 
-weights_draws_df <- cbind(weights, weights_prior)
+# true w
+true_ws <- list(
+    "1" = unique(draws_df$true_w_1),
+    "2" = unique(draws_df$true_w_2),
+    "3" = unique(draws_df$true_w_3),
+    "4" = unique(draws_df$true_w_4),
+    "5" = unique(draws_df$true_w_5)
+)
+
+weights_draws_df <- cbind(weights, weights_prior) %>%
+    mutate(
+        true_w = as.numeric(true_ws[feature_number])
+    )
 ```
 
 ```{r}
@@ -132,6 +151,7 @@ ggplot(data = weights_draws_df) +
     geom_density(aes(x = weights),
         fill = "red", alpha = .5
     ) +
+    geom_vline(aes(xintercept = true_w), linetype = "dashed") +
     theme_bw() +
     facet_wrap(. ~ feature_number) +
     labs(x = "w")
@@ -180,7 +200,10 @@ draws_df <- read_csv(
     "data/recovery/model_validation_samples_rl.csv"
 ) %>%
     mutate(
-        chain = as.factor(.chain)
+        chain = as.factor(.chain),
+        true_temp = 2.13574913057964,
+        true_alpha_pos = 0.345179046317935,
+        true_alpha_neg = 0.804031256213784
     )
 
 colnames(draws_df) <- update_colnames(colnames(draws_df))
@@ -268,6 +291,7 @@ ggplot(data = draws_df) +
     geom_density(aes(x = alpha_neg),
         fill = "red", alpha = .5
     ) +
+    geom_vline(aes(xintercept = true_alpha_neg), linetype = "dashed") +
     theme_bw() +
     labs(x = latex2exp::TeX("$\\alpha_-$"))
 
@@ -284,6 +308,7 @@ ggplot(data = draws_df) +
     geom_density(aes(x = alpha_pos),
         fill = "red", alpha = .5
     ) +
+    geom_vline(aes(xintercept = true_alpha_pos), linetype = "dashed") +
     theme_bw() +
     labs(x = latex2exp::TeX("$\\alpha_+$"))
 
@@ -300,6 +325,7 @@ ggplot(data = draws_df) +
     geom_density(aes(x = temp),
         fill = "red", alpha = .5
     ) +
+    geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
     theme_bw() +
     labs(x = latex2exp::TeX("$\\tau$"))
 
@@ -347,7 +373,9 @@ draws_df <- read_csv(
     "data/recovery/model_validation_samples_rl_simple.csv"
 ) %>%
     mutate(
-        chain = as.factor(.chain)
+        chain = as.factor(.chain),
+        true_temp = 2.30422660754994,
+        true_alpha = 0.59035809263587
     )
 
 colnames(draws_df) <- update_colnames(colnames(draws_df))
@@ -405,6 +433,7 @@ ggplot(data = draws_df) +
     geom_density(aes(x = alpha),
         fill = "red", alpha = .5
     ) +
+    geom_vline(aes(xintercept = true_alpha), linetype = "dashed") +
     theme_bw() +
     labs(x = latex2exp::TeX("$\\alpha$"))
 
@@ -421,6 +450,7 @@ ggplot(data = draws_df) +
     geom_density(aes(x = temp),
         fill = "red", alpha = .5
     ) +
+    geom_vline(aes(xintercept = true_temp), linetype = "dashed") +
     theme_bw() +
     labs(x = latex2exp::TeX("$\\tau$"))
 
