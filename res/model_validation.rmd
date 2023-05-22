@@ -80,11 +80,11 @@ p6 <- ggplot(draws_df) +
     scale_color_manual(values = c("dodgerblue4", "deepskyblue")) +
     labs(y = latex2exp::TeX("$w_5$"))
 
-(p1 + p2) / (p3 + p4) / (p5 + p6) +
+p1 / p2 / p3 / p4 / p5 / p6 +
     plot_layout(guides = "collect")
 
 ggsave("figs/gcm/model_validation/chains.png",
-    width = 7, height = 7
+    width = 7, height = 11
 )
 ```
 
