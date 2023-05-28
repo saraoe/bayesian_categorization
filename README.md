@@ -21,6 +21,7 @@ The analysis of the thesis is two-fold: 1) model validation and 2) model fit. Mo
 │   └── ... 
 ├── res                         <- rmd-files for results and plots
 ├── figs                        <- figures
+└── run.sh                      <- to reproduce results
 ````
 
 ## Reproduce Results
