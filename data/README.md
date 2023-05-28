@@ -35,7 +35,7 @@ Data collected in experiment where participants categorized Aliens as dangerous/
 - "communication", "complement": participants rating communication and complement if they were in pairs
 
 ## Samples
-The sampled values from fitting the models on the empirical data are called ```[model name]_[session number]_samples.csv```. Thus, the file ```gcm_1_samples.csv``` are the samples from fitting the GCM model to the data in the first session. The models are fitted using the script ``src/fit_models.r``. The models only uses one category, and it has been fitted to *nutricious* over *dangerous* as this category were more balanced in the empiracal data.
+The sampled values from fitting the models on the empirical data are called ```[model name]_samples.csv```. Thus, the file ```gcm_1_samples.csv``` are the samples from fitting the GCM model to the data in the first session. The models are fitted using the script ``src/fit_models.r``. The models only uses one category, and it has been fitted to *nutricious* over *dangerous* as this category were more balanced in the empiracal data.
 
 ## Model Comparison
 The data output for model comparison are divided into two distinct files: 
@@ -57,14 +57,6 @@ The files named *model validation* are divided into two separate files: samples 
 The models have been run on either simulated feautures that are binary or continuous between 0 and 1, or the emperical data. The categorization rules were manually specified so the category depended on the value of features 1 and 2 only, thus, resembling a low complexity condition.
 
 The files a named as follows ``parameter_recovery_[model name]_[data type][n observations]_[index].csv``. Thus, the files ``parameter_recovery_gcm_binary104_1.csv`` includes samples from parameter recovery of the GCM model using simulated binary features and 104 trials. The index allows for multiple runs with identical arguments but new seed.
-
-*Explanation of files that were run before systematic naming:*
-| file name | model | data | n observations | n participants |
-| --- | --- | --- | --- | --- | 
-| parameter_recovery_gcm_aliendata.csv | ``stan/gcm.stan`` | Alien data | 104 | 1 | 
-| parameter_recovery_gcm_binary208.csv | ``stan/gcm.stan`` | Binary data | 208 | 1 | 
-| parameter_recovery_gcm_continuous208.csv | ``stan/gcm.stan`` | Continuous data | 208 | 1 | 
-| parameter_recovery_rl_300.csv | ``stan/reinforcement_learning.stan`` | Binary data | 300 | 1 | 
 
 ### Model Recovery
 The data output for model recovery are divided into two distinct files: 
