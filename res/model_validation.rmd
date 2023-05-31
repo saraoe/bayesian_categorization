@@ -171,7 +171,8 @@ ggplot(data = response_df) +
     theme_bw() +
     facet_wrap(. ~ c) +
     labs(
-        color = "w"
+        color = "w",
+        y = "cumulative score"
     ) +
     scale_color_brewer(palette = "Dark2")
 
@@ -345,7 +346,8 @@ ggplot(data = response_df) +
     theme_bw() +
     facet_wrap(alpha_pos_round ~ alpha_neg_round) +
     labs(
-        color = latex2exp::TeX("$\\tau$")
+        color = latex2exp::TeX("$\\tau$"),
+        y = "cumulative score"
     ) +
     scale_color_brewer(palette = "PuOr")
 
@@ -469,7 +471,8 @@ ggplot(data = response_df) +
     theme_bw() +
     facet_wrap(. ~ alpha) +
     labs(
-        color = latex2exp::TeX("$\\tau$")
+        color = latex2exp::TeX("$\\tau$"),
+        y = "cumulative score"
     ) +
     scale_color_brewer(palette = "PuOr")
 

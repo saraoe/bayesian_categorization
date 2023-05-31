@@ -224,7 +224,7 @@ ggplot(data = weights_draws_df) +
   ) +
   facet_wrap(. ~ w_name, ncol = 1) +
   theme_bw() +
-  xlab("True weights") +
+  xlab("Feature") +
   ylab("w")
 
 ggsave("figs/gcm/parameter_recovery/pos-w.png",
@@ -251,7 +251,7 @@ ggplot(data = weights_draws_df) +
   labs(
     color = "w",
     fill = "w",
-    x = "weight"
+    x = "w"
   ) +
   theme(legend.position = "bottom")
 
@@ -277,8 +277,9 @@ for (w_cond in unique(weights_draws_df$w_name)) {
     scale_fill_brewer(palette = "PuOr") +
     labs(
       color = "c",
-      fill = "c"
-    ) 
+      fill = "c",
+      x = "w"
+    )
 
   ggsave(
     paste("figs/gcm/parameter_recovery/pos-w_",
@@ -306,7 +307,8 @@ for (w_cond in unique(weights_draws_df$w_name)) {
     facet_wrap(. ~ feature_number) +
     scale_fill_brewer(palette = "Dark2") +
     labs(
-      fill = "Number of \nobservations"
+      fill = "Number of \nobservations",
+      x = "w"
     )
 
   ggsave(

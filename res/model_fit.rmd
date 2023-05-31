@@ -580,7 +580,9 @@ p1 <- posteriorcorrect %>%
     geom_smooth(aes(x = trial, y = cumulative, color = type)) +
     theme_bw() +
     facet_wrap(. ~ session) +
-    labs(color = "") +
+    labs(
+        y = "cumulative score",
+        color = "") +
     scale_color_manual(values = c("darkorange", "slateblue")) +
     theme(legend.position = "bottom")
 
@@ -597,7 +599,9 @@ p2 <- posteriorcorrect %>%
     geom_smooth(aes(x = trial, y = cumulative, color = type)) +
     theme_bw() +
     facet_wrap(. ~ session) +
-    labs(color = "") +
+    labs(
+        y = "cumulative score",
+        color = "") +
     scale_color_manual(values = c("darkorange", "slateblue")) +
     theme(legend.position = "bottom")
 
@@ -630,7 +634,7 @@ posteriorcorrect %>%
         "slateblue1", "slateblue4"
     )) +
     labs(
-        y = "cumulative performance",
+        y = "cumulative score",
         color = "") +
     theme(legend.position = "bottom")
 
